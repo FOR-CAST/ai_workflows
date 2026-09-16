@@ -1,0 +1,3 @@
+# Hook scripts source _policy.sh relative to their own directory.
+source-path=SCRIPTDIR
+external-sources=true
