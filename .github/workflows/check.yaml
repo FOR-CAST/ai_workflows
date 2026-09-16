@@ -1,0 +1,138 @@
+name: check
+
+on:
+  push:
+    branches: [main, development]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  CLAUDE_CODE_VERSION: "2.1.273"
+  DISABLE_AUTOUPDATER: "1"
+
+jobs:
+  manifests:
+    name: Manifests, consistency, plugin loading
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # tags, for the version-bump check
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
+      - name: Install Claude Code
+        run: npm install -g --include=optional "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}"
+
+      - name: Validate marketplace and plugin manifests
+        run: |
+          claude plugin validate --strict .
+          for d in plugins/*/; do claude plugin validate --strict "$d"; done
+
+      - name: Install every plugin and fail on load errors
+        run: .github/scripts/check-plugin-loading.sh
+
+      - name: Repository consistency
+        run: .github/scripts/check-consistency.sh
+
+      - name: Plugin versions bumped where files changed
+        run: .github/scripts/check-version-bumps.sh
+
+  hooks:
+    name: Hook tests (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    env:
+      BATS_SHA: eb7f42f8d608ac693d7a4b67474f6714ea68cfc5 # v1.14.0
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install bats-core
+        run: |
+          git init -q "$RUNNER_TEMP/bats-core"
+          git -C "$RUNNER_TEMP/bats-core" fetch -q --depth 1 https://github.com/bats-core/bats-core "$BATS_SHA"
+          git -C "$RUNNER_TEMP/bats-core" checkout -q FETCH_HEAD
+
+      - name: Install jq
+        if: runner.os == 'macOS'
+        run: command -v jq >/dev/null || brew install jq
+
+      - name: Tool versions
+        run: |
+          bash --version | head -1
+          jq --version
+          shellcheck --version 2>/dev/null | sed -n 2p || echo "shellcheck: not installed (its test is skipped)"
+
+      - name: Run hook tests
+        run: '"$RUNNER_TEMP/bats-core/bin/bats" tests/hooks'
+
+  skills:
+    name: Skill validation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      SKILL_VALIDATOR_VERSION: "1.6.1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install skill-validator
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v="$SKILL_VALIDATOR_VERSION"
+          cd "$RUNNER_TEMP"
+          gh release download "v$v" --repo agent-ecosystem/skill-validator \
+            --pattern "skill-validator_${v}_linux_amd64.tar.gz" \
+            --pattern "skill-validator_${v}_checksums.txt"
+          sha256sum --check --ignore-missing "skill-validator_${v}_checksums.txt"
+          tar -xzf "skill-validator_${v}_linux_amd64.tar.gz" skill-validator
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+
+      - name: Validate every skill
+        run: .github/scripts/check-skills.sh
+
+  release-tags:
+    name: Tag plugin releases
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [manifests, hooks, skills]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: true # pushes {name}--v{version} tags
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
+      - name: Install Claude Code
+        run: npm install -g --include=optional "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}"
+
+      - name: Tag plugin versions that have no release tag yet
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          .github/scripts/tag-releases.sh
