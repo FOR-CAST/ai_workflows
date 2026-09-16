@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "ai-workflows",
+  "owner": {
+    "name": "Alex Chubaty",
+    "email": "achubaty@for-cast.ca"
+  },
+  "metadata": {
+    "description": "Agentic AI tooling for R-based research software: conventions, guardrails and review agents distilled from the histories of production simulation, geospatial and R-package projects.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "r-code-review",
+      "source": "./plugins/r-code-review",
+      "description": "Read-only review subagents for the failure classes that research R code produces instead of errors: spatial correctness, pipeline invalidation, dependency declaration, and reproducibility. Plus the measure-against-an-independent-reference method these projects use to catch bugs that no test would have caught.",
+      "category": "research-software",
+      "keywords": [
+        "r",
+        "code-review",
+        "reproducibility",
+        "spatial",
+        "verification"
+      ]
+    },
+    {
+      "name": "r-geospatial",
+      "source": "./plugins/r-geospatial",
+      "description": "Spatial data work in R that survives serialisation, parallel workers and large rasters: the terra external-pointer trap and how to avoid needing wrap(), one declared project CRS, the sf geometry-repair sequence distilled from repeated corrective commits, out-of-core raster and vector strategies, and the silent-wrong-answer failures that spatial code produces instead of errors.",
+      "category": "research-software",
+      "keywords": [
+        "r",
+        "gis",
+        "terra",
+        "sf",
+        "raster",
+        "spatial",
+        "geotargets"
+      ]
+    },
+    {
+      "name": "r-landis-ii",
+      "source": "./plugins/r-landis-ii",
+      "description": "Driving LANDIS-II from R: input validation before a run (because LANDIS fails on bad input in the worst possible way -- non-zero exit, empty stderr, the real message buried in a log inside a scratch dir), the raster and text-format conventions it silently depends on, container execution on shared storage, and the output-reading rules including the geotransform y-flip that invalidated a full calibration with no error at all.",
+      "category": "research-software",
+      "keywords": [
+        "landis-ii",
+        "r",
+        "simulation",
+        "forest",
+        "docker"
+      ]
+    },
+    {
+      "name": "r-package-dev",
+      "source": "./plugins/r-package-dev",
+      "description": "Deltas on top of the r-lib package-development skills, not a replacement for them: the development-to-main change workflow for co-developed packages (branch and submodule checks, local tests, CI, merge, install into the project from remote main), per-package overrides the r-lib skills cannot know, the dependency-declaration failures that dominate this corpus, and hooks that catch roxygen/NAMESPACE drift and the recurring .claude R CMD check NOTE.",
+      "category": "research-software",
+      "keywords": [
+        "r",
+        "package",
+        "devtools",
+        "roxygen2",
+        "testthat",
+        "cran"
+      ]
+    },
+    {
+      "name": "r-project-core",
+      "source": "./plugins/r-project-core",
+      "description": "Baseline conventions and deterministic guardrails for R-based research projects: air formatting, ASCII-only code and reports, citation integrity, the .Rprofile/_local.R/_hosts.R config split, commit discipline, and PreToolUse guards against destructive commands, hand-editing generated files, and mutating the library while a long run is live.",
+      "category": "research-software",
+      "keywords": [
+        "r",
+        "research-software",
+        "conventions",
+        "guardrails",
+        "reproducibility"
+      ]
+    },
+    {
+      "name": "r-reporting",
+      "source": "./plugins/r-reporting",
+      "description": "Reports and provenance for research deliverables: writing for a stated audience (the user is always asked who the reader is; plain-language summary first, technical detail later or in appendices, no jargon or machine-written phrasing), Quarto project-mode path behaviour and the stale-PDF trap, rendering from a pipeline, deriving report numbers from the pipeline so prose cannot drift, draft marking for AI-assisted content, and input manifests and reproducibility receipts. Chart design is left to the dataviz and r-lib:alt-text skills.",
+      "category": "research-software",
+      "keywords": [
+        "quarto",
+        "r",
+        "reporting",
+        "provenance",
+        "reproducibility"
+      ]
+    },
+    {
+      "name": "r-spades",
+      "source": "./plugins/r-spades",
+      "description": "Developing and wiring SpaDES modules: the defineModule metadata contract and why it must be read rather than inferred, the .inputObjects timing trap that silently mutates data, reqdPkgs remote specs and nested-module package loading, module renaming, and eight years of accumulated Cache() lessons ending in targets-owns-the-cache.",
+      "category": "research-software",
+      "keywords": [
+        "r",
+        "spades",
+        "simulation",
+        "modules",
+        "reproducible"
+      ]
+    },
+    {
+      "name": "r-targets",
+      "source": "./plugins/r-targets",
+      "description": "Building, testing, debugging and running {targets} pipelines: a tested static validator and hermetic test suite with GitHub Actions CI for projects that are not R packages, multi-project stores and the definition-time vs run-time contract, crew and cluster runs that survive memory kills, and the silent-staleness traps that make pipelines report clean runs while producing wrong answers.",
+      "category": "research-software",
+      "keywords": [
+        "r",
+        "targets",
+        "pipeline",
+        "crew",
+        "reproducibility"
+      ]
+    }
+  ]
+}

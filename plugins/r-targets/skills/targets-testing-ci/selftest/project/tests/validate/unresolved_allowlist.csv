@@ -1,0 +1,3 @@
+project,variant,target,check,symbol,reason
+alpha,any,dt_columns,unresolved,v|w,data.table columns inside [
+alpha,any,uses_binding,unresolved,no_such_symbol,planted stale row: target present but matches nothing

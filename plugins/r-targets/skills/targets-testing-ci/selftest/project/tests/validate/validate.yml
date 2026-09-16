@@ -1,0 +1,6 @@
+variants:
+  default: {}
+  stage:
+    env: { SELFTEST_STAGE: "true" }
+run_scoping_options: "^selftest[.]"
+option_exceptions: {}

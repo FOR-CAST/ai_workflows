@@ -1,0 +1,110 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/session-context.sh",
+            "timeout": 20,
+            "statusMessage": "Reading machine and project state"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/guard-destructive.sh",
+            "timeout": 10,
+            "statusMessage": "Checking for destructive commands"
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/guard-process-ownership.sh",
+            "timeout": 10,
+            "statusMessage": "Checking process ownership"
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/guard-staging.sh",
+            "timeout": 10,
+            "statusMessage": "Checking git staging"
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/guard-policy.sh",
+            "timeout": 10,
+            "statusMessage": "Checking project policy"
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/guard-long-run-interlock.sh",
+            "timeout": 15,
+            "statusMessage": "Checking for live runs"
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/advise-bash-hygiene.sh",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/guard-generated-files.sh",
+            "timeout": 10,
+            "statusMessage": "Checking for generated files"
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/guard-ascii.sh",
+            "timeout": 10,
+            "statusMessage": "Checking ASCII-only rule"
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/guard-mcp.sh",
+            "timeout": 10,
+            "statusMessage": "Checking MCP tool for writes"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/r-format-and-parse.sh",
+            "timeout": 60,
+            "statusMessage": "Parsing and formatting R"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/check-citations.sh",
+            "timeout": 90,
+            "statusMessage": "Verifying citations and DOIs"
+          }
+        ]
+      }
+    ]
+  }
+}

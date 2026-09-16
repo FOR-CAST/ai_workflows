@@ -1,0 +1,7 @@
+## local, machine-specific policy (commit the .example instead)
+.claude/r-project-policy.json
+.claude/settings.local.json
+
+## scratch
+_tmp*
+.DS_Store

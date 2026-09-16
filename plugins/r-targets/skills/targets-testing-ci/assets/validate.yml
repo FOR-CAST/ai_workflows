@@ -1,0 +1,25 @@
+## Configuration for scripts/validate-projects.R. Copy to tests/validate/validate.yml.
+
+## Projects to validate. Default: every project in _targets.yaml whose script exists, or "main".
+# projects: [main, growth]
+
+## Pipeline variants. Every project is validated once per variant, in a fresh R process. List
+## EVERY setting that changes which targets exist -- a gated stage that no variant switches on is
+## never checked, and gated stages are where the "returns early, so it built" bug hides.
+## `env` is set before R starts; `options` are set before the pipeline script runs (a script that
+## sets the same option itself wins -- make such gates readable from an env var instead).
+variants:
+  default: {}
+  # ci:
+  #   env: { PIPELINE_AS_CI: "true" }      # a project-specific name: CI=true can be overridden by ~/.Renviron
+  # all-stages:
+  #   env: { PROJ_DATAPREP: "true", PROJ_FORWARDSIM: "true" }
+
+## Options that scope a run (regex on the option name). getOption() is not a tracked dependency,
+## so a target reading one keeps its cached value when the option changes. Such targets must be
+## cue = tar_cue(mode = "always") and deployment = "main". Empty disables the check.
+run_scoping_options: ""   # e.g. "^(myproj|growth)[.]"
+
+## Targets allowed to read a run-scoping option anyway, each with its reason. Shrink this list.
+option_exceptions: {}
+  # shared_reference_grid: "rebuild is expensive; split the option read out with the next forced rebuild"

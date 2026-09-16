@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "r-package-dev",
+  "displayName": "R Package Development (research packages)",
+  "version": "0.1.0",
+  "description": "Deltas on top of the r-lib package-development skills, not a replacement for them: the development-to-main change workflow for co-developed packages (branch and submodule checks, local tests, CI, merge, install into the project from remote main), per-package overrides the r-lib skills cannot know, the dependency-declaration failures that dominate this corpus, and hooks that catch roxygen/NAMESPACE drift and the recurring .claude R CMD check NOTE.",
+  "author": {
+    "name": "Alex Chubaty",
+    "email": "achubaty@for-cast.ca"
+  },
+  "repository": "https://github.com/FOR-CAST/ai_workflows",
+  "license": "MIT",
+  "keywords": [
+    "r",
+    "package",
+    "devtools",
+    "roxygen2",
+    "testthat",
+    "cran"
+  ]
+}

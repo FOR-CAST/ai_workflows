@@ -1,0 +1,6 @@
+alpha:
+  script: _targets_alpha.R
+  store: _targets_alpha
+beta:
+  script: _targets_beta.R
+  store: _targets_beta

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "r-spades",
+  "displayName": "SpaDES Module Development",
+  "version": "0.1.0",
+  "description": "Developing and wiring SpaDES modules: the defineModule metadata contract and why it must be read rather than inferred, the .inputObjects timing trap that silently mutates data, reqdPkgs remote specs and nested-module package loading, module renaming, and eight years of accumulated Cache() lessons ending in targets-owns-the-cache.",
+  "author": {
+    "name": "Alex Chubaty",
+    "email": "achubaty@for-cast.ca"
+  },
+  "repository": "https://github.com/FOR-CAST/ai_workflows",
+  "license": "MIT",
+  "keywords": [
+    "r",
+    "spades",
+    "simulation",
+    "modules",
+    "reproducible"
+  ]
+}

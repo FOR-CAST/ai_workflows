@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "r-code-review",
+  "displayName": "Research Code Review",
+  "version": "0.1.0",
+  "description": "Read-only review subagents for the failure classes that research R code produces instead of errors: spatial correctness, pipeline invalidation, dependency declaration, and reproducibility. Plus the measure-against-an-independent-reference method these projects use to catch bugs that no test would have caught.",
+  "author": {
+    "name": "Alex Chubaty",
+    "email": "achubaty@for-cast.ca"
+  },
+  "repository": "https://github.com/FOR-CAST/ai_workflows",
+  "license": "MIT",
+  "keywords": [
+    "r",
+    "code-review",
+    "reproducibility",
+    "spatial",
+    "verification"
+  ]
+}

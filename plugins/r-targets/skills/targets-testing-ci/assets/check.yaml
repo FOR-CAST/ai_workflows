@@ -1,0 +1,121 @@
+## Tests and static pipeline validation for a {targets} + renv project that is not an R package.
+## Copy to .github/workflows/check.yaml and adjust the lines marked ADJUST.
+##
+## Before relying on it: trigger it once with workflow_dispatch on your working branch and record
+## the real cold-cache time. Do not size timeout-minutes from an estimate alone.
+
+name: check
+
+on:
+  push:
+    branches: [main]                 # ADJUST: add the branch you actually integrate on
+  pull_request:
+  workflow_dispatch:                 # lets you run it on a branch that has no PR yet
+
+permissions:
+  contents: read
+
+concurrency:                          # note: a cancelled cold build still saves its cache only
+  group: ${{ github.workflow }}-${{ github.ref }}   # because bypass-cache is "never" below
+  cancel-in-progress: true
+
+jobs:
+  syntax:
+    name: syntax and lockfile
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      ## Skip the project .Rprofile (and so renv) for this light job. This ALSO skips the
+      ## ~/.Rprofile where setup-r writes its CRAN mirror, so every install.packages() below
+      ## passes repos explicitly -- stock R has no default mirror and would fail.
+      R_PROFILE_USER: /dev/null
+    steps:
+      - uses: actions/checkout@v7      # ADJUST: check the current major before copying
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: renv
+      - name: Parse every tracked R file
+        run: |
+          files <- system2("git", c("ls-files", shQuote("*.R")), stdout = TRUE)
+          files <- files[!startsWith(files, "renv/")]
+          for (f in files) parse(f)
+          cat(length(files), "files parse\n")
+        shell: Rscript {0}
+      - name: Validate renv.lock
+        run: |
+          install.packages("jsonlite", repos = Sys.getenv("RSPM", "https://cloud.r-project.org"))
+          invisible(jsonlite::fromJSON("renv.lock"))
+        shell: Rscript {0}
+      - name: Validate CITATION.cff
+        if: hashFiles('CITATION.cff') != ''
+        run: pipx run --spec cffconvert==2.0.0 cffconvert --validate
+
+  tests:
+    name: tests and pipeline validation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180               # ADJUST: from a measured first run, plus margin
+    env:
+      ## renv resolves GitHub packages through the API: 60 requests/hour unauthenticated, shared
+      ## per runner IP. GITHUB_TOKEN can read only THIS repository -- a private dependency repo
+      ## needs a PAT stored as a secret instead.
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      NOT_CRAN: "true"                 # expect_snapshot() runs; arrow source builds get libarrow
+      TESTTHAT_EDITION: "3"
+      PIPELINE_AS_CI: "true"           # ADJUST: the project's own switch for the CI graph, if any
+    steps:
+      - uses: actions/checkout@v7      # no `submodules:` -- packages restore from renv.lock
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: renv              # reads R's version from renv.lock
+
+      ## Stock distribution libraries only -- never a PPA such as ubuntugis: Package Manager's
+      ## binaries are built against the distribution's own GDAL/GEOS/PROJ, and a PPA turns every
+      ## spatial package into a source build.
+      - name: System libraries declared in renv.lock
+        working-directory: ${{ runner.temp }}
+        env:
+          R_PROFILE_USER: /dev/null
+        run: |
+          Rscript -e 'install.packages(c("pak", "jsonlite"), repos = Sys.getenv("RSPM", "https://cloud.r-project.org"))'
+          Rscript "$GITHUB_WORKSPACE/scripts/ci-sysreqs.R" "$GITHUB_WORKSPACE/renv.lock"
+
+      ## Needed whenever the pipeline uses tarchetypes::tar_quarto(): it runs `quarto inspect` at
+      ## pipeline DEFINITION time, so tar_source() and the validator fail without it.
+      - uses: quarto-dev/quarto-actions/setup@v2     # ADJUST: remove if no tar_quarto()
+
+      ## setup-renv caches for you; do not add actions/cache. bypass-cache "never" saves the
+      ## package cache even when a later step fails or the run is cancelled -- the default saves
+      ## only on success and throws a cold build away.
+      - uses: r-lib/actions/setup-renv@v2
+        with:
+          bypass-cache: never
+          # profile: '"ci"'            # an R expression: note the nested quotes
+
+      - name: Report packages restored at versions the lockfile does not record
+        run: |
+          st <- renv::status()
+          if (!isTRUE(st$synchronized)) {
+            cat("::warning::library differs from renv.lock -- restore 'repaired' some packages;",
+                "CI is not testing exactly what the lockfile records\n")
+          }
+        shell: Rscript {0}
+
+      - name: Tests
+        run: Rscript scripts/run-tests.R
+
+      - name: Validate every targets project and variant
+        run: Rscript scripts/validate-projects.R
+
+      ## `git status` cannot see gitignored paths, which is exactly where a test that touched real
+      ## data would write. Assert they do not exist, and that renv did not rewrite activate.R.
+      - name: Tests and validation left the checkout untouched
+        run: |
+          git status --porcelain
+          test -z "$(git status --porcelain)"
+          for p in inputs outputs data cache; do          # ADJUST: the project's data paths
+            if [ -e "$p" ]; then echo "tests or validation created $p/"; exit 1; fi
+          done
+          if find . -maxdepth 1 -type d -name '_targets*' | grep -q .; then
+            echo "tests or validation created a targets store"; exit 1
+          fi

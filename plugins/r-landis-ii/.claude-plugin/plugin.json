@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "r-landis-ii",
+  "displayName": "LANDIS-II Integration",
+  "version": "0.1.0",
+  "description": "Driving LANDIS-II from R: input validation before a run (because LANDIS fails on bad input in the worst possible way -- non-zero exit, empty stderr, the real message buried in a log inside a scratch dir), the raster and text-format conventions it silently depends on, container execution on shared storage, and the output-reading rules including the geotransform y-flip that invalidated a full calibration with no error at all.",
+  "author": {
+    "name": "Alex Chubaty",
+    "email": "achubaty@for-cast.ca"
+  },
+  "repository": "https://github.com/FOR-CAST/ai_workflows",
+  "license": "MIT",
+  "keywords": [
+    "landis-ii",
+    "r",
+    "simulation",
+    "forest",
+    "docker"
+  ]
+}
