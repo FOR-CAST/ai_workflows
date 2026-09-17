@@ -99,8 +99,8 @@ diff them rather than eyeballing two printouts:
 
 ```r
 saveRDS(sessioninfo::session_info(), sprintf("outputs/receipts/session-%s.rds", Sys.info()[["nodename"]]))
-sessioninfo::session_diff(readRDS("outputs/receipts/session-pinus.rds"),
-                          readRDS("outputs/receipts/session-picea.rds"))
+sessioninfo::session_diff(readRDS("outputs/receipts/session-node-a.rds"),
+                          readRDS("outputs/receipts/session-node-b.rds"))
 ```
 
 Set any provenance target to rebuild every time (`cue = tar_cue(mode = "always")`)

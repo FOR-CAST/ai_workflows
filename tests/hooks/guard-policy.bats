@@ -146,7 +146,7 @@ setup() {
   with_policy "{\"controllerHosts\": [\"$(hostname -s)\"]}"
   bash_hook "$G" 'git status'
   [ "$(decision)" = none ]
-  bash_hook "$G" "ssh pinus 'Rscript -e \"targets::tar_make()\"'"
+  bash_hook "$G" "ssh compute-node 'Rscript -e \"targets::tar_make()\"'"
   [ "$(decision)" = none ]
   bash_hook "$G" "systemd-run --user --scope -p MemoryMax=4G Rscript -e 'targets::tar_make()'"
   [ "$(decision)" = none ]
