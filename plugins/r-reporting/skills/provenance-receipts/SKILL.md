@@ -88,19 +88,27 @@ package:
 
 | Missing | How |
 | --- | --- |
-| the host | `options(sessioninfo.include_hostname = TRUE)` before `session_info()` |
 | the commit each package was built from | `session_info()$packages$source` gives `Github (owner/repo@sha)`; `prov_r_packages()` gives versions only. An r-universe install shows its repository, not a SHA |
 | terra's own GDAL/GEOS/PROJ | `terra::libVersion("all")` -- sf and terra can link different builds, and both change results invisibly to renv |
 | the lockfile actually used | `tools::md5sum("renv.lock")` |
 | a container | the image digest, not the tag |
 
-**Comparing hosts.** When two nodes disagree, save each host's `session_info()` and
-diff them rather than eyeballing two printouts:
+**Not the machine name.** A receipt says what ran, not where. Machine names and IPs
+are infrastructure identity: they belong in gitignored config, and never in a
+committed receipt or a rendered report. They are also weak evidence -- the R version,
+the lockfile hash and the toolchain are what let someone reproduce a result, and a
+name tells them none of it. `session_info()` leaves the hostname out by default;
+leave it out.
+
+**Comparing machines.** When two of them disagree, save each `session_info()` and
+diff them rather than eyeballing two printouts. Label the files by role, and keep
+them out of version control:
 
 ```r
-saveRDS(sessioninfo::session_info(), sprintf("outputs/receipts/session-%s.rds", Sys.info()[["nodename"]]))
-sessioninfo::session_diff(readRDS("outputs/receipts/session-node-a.rds"),
-                          readRDS("outputs/receipts/session-node-b.rds"))
+dir.create("_scratch/receipts", recursive = TRUE, showWarnings = FALSE)
+saveRDS(sessioninfo::session_info(), "_scratch/receipts/session-worker.rds")
+sessioninfo::session_diff(readRDS("_scratch/receipts/session-control.rds"),
+                          readRDS("_scratch/receipts/session-worker.rds"))
 ```
 
 Set any provenance target to rebuild every time (`cue = tar_cue(mode = "always")`)
