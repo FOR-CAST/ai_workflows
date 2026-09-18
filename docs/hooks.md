@@ -33,6 +33,7 @@ the moment it mattered.
 | `guard-process-ownership.sh` | `pkill`, `killall`, `kill -9`, `docker kill/stop/rm/system prune`, `screen -X quit`, service stops | an agent once killed another project's multi-day run on a shared node. Escape hatch: add `# owner-verified: ...` after checking `ps -o pid,user,lstart` |
 | `guard-staging.sh` | `git add -A`, `git add .`, `git add -u`, `git commit -a` | multiple sessions share worktrees; sweeping commits have captured unpushed submodule pointers and broken every node in a cluster |
 | `guard-policy.sh` | *policy-driven*: package installs, `air format`, heavy compute on a control node; **asks you to confirm** publishing; advises on a bare `Rscript` | see below |
+| `guard-host-names.sh` | with `hostPatterns`, **asks you to confirm** a commit message, PR or issue body, release note or staged diff that names one of your machines | a name in a commit is public and permanent, and says nothing about reproducibility. An `ssh` destination is not a published name, so it passes |
 | `guard-long-run-interlock.sh` | package installs (renv, pak, remotes, devtools, Require, `setupProject()`), `renv::checkout()` and node syncs **while a long run is live** | syncing swaps the R library out from under active workers |
 | `advise-bash-hygiene.sh` | *(never denies)* notes a leading `cd` (the shell's cwd does not persist between calls) and a long command still on the default 2-minute timeout | ~3,000 cwd resets and 64 timeouts in the record |
 
@@ -51,6 +52,7 @@ pull request, or an R-session server run code, with no prompt.
 | --- | --- |
 | `guard-generated-files.sh` | hand-edits to `man/*.Rd`, `NAMESPACE`, `renv.lock`, `renv/activate.R`, `_targets/meta/`, and to `README.md`/`*.html` where a `.qmd`/`.Rmd` source sits beside them |
 | `guard-ascii.sh` | non-ASCII in `.R`, `.qmd`, `.Rmd`, `.bib` (or the policy's `asciiExtensions`); reports each character, its code point, the first line it appears on, and the ASCII or LaTeX replacement |
+| `guard-host-names.sh` | *(asks, never denies)* a machine name from `hostPatterns` written into a file git tracks. Gitignored files -- `_hosts.R`, drafts -- and files outside a repository pass untouched |
 
 ### PostToolUse / Edit, Write
 

@@ -73,13 +73,14 @@ Create `.claude/r-project-policy.json` in each repo:
 | `noAirFormat: true` | denies `air format` in this repo |
 | `publishRequiresApproval: true` | forces a permission prompt (even in auto mode) for `git push`; `gh` writes (`pr`/`issue` create, merge, comment, review, edit, ready, close; release, repo, gist, label, secret and variable changes; `workflow run`); `gh api` with a write method **or with `-f`/`-F`/`--input` and no method**, which gh sends as a POST; `gh extension install`; and MCP tools whose names say they write or run code |
 | `controllerHosts` | denies heavy compute on those hosts unless dispatched over `ssh` |
+| `hostPatterns` | asks before a machine name reaches a commit message, a PR or issue body, release notes, the staged diff, or a tracked file (`FORCAST_HOST_PATTERNS` overrides it for one session) |
 | `longRunPatterns` | what the live-run interlock and session report watch for (`FORCAST_LONGRUN_PATTERNS` overrides it for one session) |
 | `heavyCommands` | overrides what counts as heavy for `controllerHosts` |
 | `asciiExtensions` | which file types the ASCII guard covers (`FORCAST_ASCII_EXT` overrides it for one session) |
 
 **If the repo keeps infrastructure identity out of version control**, gitignore
-this file and commit a `.example` beside it -- `controllerHosts` names real
-machines.
+this file and commit a `.example` beside it -- `controllerHosts` and `hostPatterns`
+name real machines.
 
 ## Verify
 

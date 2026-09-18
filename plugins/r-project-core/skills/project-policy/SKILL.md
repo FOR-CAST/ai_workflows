@@ -30,6 +30,7 @@ file means "no opinion": only the universally-safe guards stay active.
   "noAirFormat": false,
   "publishRequiresApproval": true,
   "controllerHosts": ["control-node-name"],
+  "hostPatterns": ["control-node-name", "worker-node-name"],
   "longRunPatterns": ["tar_make", "DEoptim", "spades", "landis"],
   "heavyCommands": ["tar_make", "quarto render", "devtools::check", "docker run"],
   "asciiExtensions": ["R", "qmd", "Rmd", "bib"]
@@ -44,6 +45,7 @@ file means "no opinion": only the universally-safe guards stay active.
 | `publishRequiresApproval: true` | forces a permission prompt -- even in auto mode -- for `git push`, `gh` writes (pr/issue/release/repo changes, `workflow run`), `gh api` writes including the implicit POST of `-f`/`-F`/`--input` without a method, `gh extension install`, and MCP tools whose names say they write or run code |
 | `controllerHosts` | denies heavy compute when `hostname -s` matches one of these, unless the command is an `ssh` dispatch |
 | `heavyCommands` | overrides what counts as heavy for `controllerHosts` |
+| `hostPatterns` | asks before a machine name reaches a commit message, a PR or issue body, release notes, the staged diff, or a tracked file. Gitignored files and `ssh` destinations are exempt |
 | `longRunPatterns` | what the live-run interlock and the SessionStart report look for |
 | `asciiExtensions` | which file types the ASCII guard covers (default `R r qmd Rmd rmd bib`) |
 
@@ -67,6 +69,12 @@ file means "no opinion": only the universally-safe guards stay active.
    blocks legitimate work or fails to prevent an OOM.
 5. **`publishRequiresApproval`** -- default this to `true`. Turning it off should
    be a deliberate decision by the user, not an inference.
+6. **`hostPatterns`** -- every machine the user works on, including the controller.
+   Set it where infrastructure identity is meant to stay private. Expect prompts if
+   a name is also an ordinary word in the domain (a genus, a place, a person); that
+   is the guard working, since only a person can tell those apart. Narrow the
+   pattern (`"nodename\\."`, or the fully qualified name) if the noise outweighs
+   the protection.
 
 ## Verifying it works
 
@@ -81,7 +89,7 @@ report which key and why.
 
 ## Do not commit machine-specific values by mistake
 
-`controllerHosts` names real machines. If the repo's convention is that
+`controllerHosts` and `hostPatterns` name real machines. If the repo's convention is that
 infrastructure identity stays out of version control (`_hosts.R` gitignored, and
 comments referring to roles rather than machines), put this file in
 `.claude/settings.local.json` territory instead: add

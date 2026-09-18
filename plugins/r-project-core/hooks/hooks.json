@@ -42,6 +42,12 @@
           },
           {
             "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/guard-host-names.sh",
+            "timeout": 15,
+            "statusMessage": "Checking for machine names"
+          },
+          {
+            "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/guard-long-run-interlock.sh",
             "timeout": 15,
             "statusMessage": "Checking for live runs"
@@ -67,6 +73,12 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/guard-ascii.sh",
             "timeout": 10,
             "statusMessage": "Checking ASCII-only rule"
+          },
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}\"/scripts/guard-host-names.sh",
+            "timeout": 15,
+            "statusMessage": "Checking for machine names"
           }
         ]
       },
