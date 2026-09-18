@@ -1,10 +1,11 @@
 ---
 name: package-conventions
-description: Per-package overrides and local conventions that the r-lib package-development skills cannot know -- which packages forbid air format, which are still testthat edition 2, how to detect the naming convention, roxygen version pinning, separate documentation-regeneration commits, test-file pairing, and generating CITATION.cff. Use alongside r-lib:r-package-development, not instead of it.
-when_to_use: Working in an R package in this ecosystem, once you already know the general devtools workflow -- specifically before running air format, devtools::document(), or writing new tests or names in an unfamiliar package.
+description: Per-package overrides and local conventions that the r-lib package-development skills cannot know -- which packages forbid air format, which are still testthat edition 2, how to detect the naming convention, roxygen version pinning, separate documentation-regeneration commits, the single NEWS.md development heading that release retitling depends on, test-file pairing, and generating CITATION.cff. Use alongside r-lib:r-package-development, not instead of it.
+when_to_use: Working in an R package in this ecosystem, once you already know the general devtools workflow -- specifically before running air format, devtools::document(), adding a NEWS.md entry, or writing new tests or names in an unfamiliar package.
 paths:
   - "**/DESCRIPTION"
   - "**/NAMESPACE"
+  - "**/NEWS.md"
   - "**/R/*.R"
   - "**/tests/**"
 ---
@@ -79,6 +80,46 @@ Roughly twenty standalone catch-up commits exist across these repos whose entire
 content is documentation someone forgot to regenerate (`redoc`, `rebuild
 documentation`, `with prev`). A `Stop` hook in this plugin catches that case: it
 warns when roxygen lines changed in `R/` but `man/` and `NAMESPACE` are unmodified.
+
+## `NEWS.md`: one development heading, never one per bump
+
+Development notes accumulate under a **single** heading:
+
+```
+# <pkg> (development version)
+
+## New features
+## Enhancements
+## Bug fixes
+```
+
+Keep bumping the `Version` in `DESCRIPTION` on every change -- that part is right --
+but never add a heading per bump (`# <pkg> 1.2.0.9027`). File the bullet in the
+matching subsection of the development section instead, adding the subsection if it
+is missing.
+
+At release, `usethis::use_version()` retitles exactly **one** heading:
+`# <pkg> (development version)` becomes `# <pkg> 1.2.1`. A numbered development
+heading survives that retitle untouched and is left sitting *above* the release
+heading, so the shipped `NEWS.md` advertises versions that were never released and
+their bullets fall outside the section for the version that actually shipped.
+
+Before adding an entry, look at what is already there:
+
+```sh
+head -20 NEWS.md
+grep -nE '^#+ .*[0-9]+\.[0-9]+\.[0-9]+\.9[0-9]+' NEWS.md   # dev headings that should not exist
+```
+
+If the second command prints anything, the file already carries the mistake. Do not
+copy it -- that is exactly how it spreads, one session at a time. Fold those
+headings back in: move each bullet into the matching subsection of the development
+section and delete the heading. Do that **on one branch only**, and say so, because
+it rewrites lines near the top of a file that every open pull request also touches,
+so it conflicts with everything in flight.
+
+If the top of the file is a released version with no development heading, add one
+above it.
 
 ## Test-file pairing, and the drift that breaks it
 

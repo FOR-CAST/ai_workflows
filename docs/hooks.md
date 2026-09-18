@@ -65,6 +65,7 @@ pull request, or an R-session server run code, with no prompt.
 
 | Event | Script | What it does |
 | --- | --- | --- |
+| PreToolUse | `guard-news-dev-heading.sh` | denies a `NEWS.md` heading that names a development version (`# pkg 1.2.0.9027`) beside a `DESCRIPTION`. Release retitling renames one heading only, so a numbered one is left above the release, advertising versions that never shipped. Carrying an existing heading through an edit, or deleting one while folding the file back in, both pass |
 | PostToolUse | `rbuildignore-claude.sh` | appends `^\.claude$` to `.Rbuildignore` when a `.claude/` dir appears beside a `DESCRIPTION` -- removes a check NOTE that occurred 28 times |
 | Stop | `check-doc-sync.sh` | blocks the turn if roxygen lines changed in `R/` but `man/` and `NAMESPACE` were not regenerated, and reminds you to check the roxygen2 version first |
 

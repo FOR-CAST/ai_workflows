@@ -106,6 +106,10 @@ packages forbid `air format .`). See `package-conventions`.
 Before leaving this stage: version bumped and a `NEWS.md` bullet added for any
 user-visible change, and the documentation regeneration committed separately.
 
+The bullet goes under the existing `# <pkg> (development version)` heading, in the
+matching subsection -- never under a new heading for the bumped version, which
+release retitling would leave stranded above the release. See `package-conventions`.
+
 **Checkpoint A -- ask to push.** Show the commits (`git -C "$P" log --oneline
 origin/development..development`), the local test and check results, and the
 version. Ask for approval to push `development`.
