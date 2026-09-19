@@ -93,6 +93,7 @@ see `targets-staleness`.
 | `error = "trim"` | when unrelated targets should keep building |
 | `error = "continue"` | **temporary only.** Failed branches are silently skipped. If you set it, write a dated revert condition in a comment, and always check `tar_meta(fields = "error")` afterwards |
 | `trust_timestamps = TRUE` | only for multi-GB archives where hashing is prohibitive |
+| `format = "qs"` | fine, but the backend changed: targets 1.9.0 switched it from `qs` to `qs2`, and `qs` was archived from CRAN on 2026-01-17. A lockfile still pinning `qs` will not restore from CRAN |
 | `seed` | set it; see the reproducibility section of `targets-staleness` |
 
 ## Stage gating by environment variable

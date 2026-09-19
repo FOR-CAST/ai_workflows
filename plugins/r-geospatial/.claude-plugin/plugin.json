@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "r-geospatial",
   "displayName": "Geospatial R (terra / sf)",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Spatial data work in R that survives serialisation, parallel workers and large rasters: the terra external-pointer trap and how to avoid needing wrap(), one declared project CRS, the sf geometry-repair sequence distilled from repeated corrective commits, out-of-core raster and vector strategies, and the silent-wrong-answer failures that spatial code produces instead of errors.",
   "author": {
     "name": "Alex Chubaty",

@@ -61,6 +61,8 @@ Guard every value that reaches a generated text file:
 
 ```r
 stopifnot(length(ext) == 1L, !is.na(ext), nzchar(ext))
+checkmate::assert_string(ext, min.chars = 1)   ## the same three checks, and it
+                                               ## names the offending value
 ```
 
 More generally: **a directive that matches nothing must not pass silently.**

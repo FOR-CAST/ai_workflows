@@ -129,6 +129,12 @@ A standing rule in these projects. Shapefiles lose long field names, have a 2 GB
 limit, and split across sidecar files -- and a fetch that drops the `.shx` fails
 in a way that looks like a corrupt download. Single-file `.gpkg` avoids all of it.
 
+Where a columnar format genuinely pays -- millions of features read repeatedly,
+column-wise -- use **geoarrow** (0.4.4, released 2026-09-16), not `sfarrow`, whose
+last CRAN release was 2021-10-27. And if you reach for a raster data cube:
+**gdalcubes was archived from CRAN on 2026-09-16**, so build the time series from
+terra and a targets pattern instead of adding an archived dependency.
+
 ## Fetch and filter server-side
 
 Push the filter to the server rather than downloading a province and cropping:

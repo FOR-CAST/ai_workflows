@@ -44,6 +44,18 @@ retune -- a runtime resource knob should not be baked into a hashed command.
 With `targets`: `tar_option_set(memory = "transient", storage = "worker",
 retrieval = "worker")` and call `gc()` explicitly inside long loops.
 
+`OMP_NUM_THREADS` is not the only per-process pool. **data.table takes 50% of the
+logical CPUs, per process.** It drops to a single thread only inside a *fork*, and
+crew and mirai workers are not forks -- so N workers each claim half the node and
+oversubscribe it. Cap it where you cap the others:
+
+```r
+data.table::setDTthreads(1)         ## documented API; per process
+```
+
+`R_DATATABLE_NUM_PROCS_PERCENT` (a percentage) is the documented environment
+variable; `R_DATATABLE_NUM_THREADS` is read too but is not in the package's docs.
+
 ## Tiling with overlap
 
 For neighbourhood operations, tiles must overlap by at least twice the
