@@ -7,3 +7,8 @@
 *.yaml   text eol=lf
 *.yml    text eol=lf
 *.R      text eol=lf
+
+## Cheatsheet sources are text; its rendered output is not.
+*.qmd    text eol=lf
+*.typ    text eol=lf
+*.pdf    binary

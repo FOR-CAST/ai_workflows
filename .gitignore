@@ -5,3 +5,6 @@
 ## scratch
 _tmp*
 .DS_Store
+
+## quarto build artifacts
+cheatsheet/.quarto/

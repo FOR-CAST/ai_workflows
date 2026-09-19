@@ -1,0 +1,454 @@
+---
+format:
+  typst:
+    papersize: us-letter
+    margin:
+      x: 0.34in
+      top: 0.30in
+      # The colophon lives in the bottom margin. At 0.30in it landed about 0.06in
+      # from the paper edge, inside the unprintable margin of most printers.
+      bottom: 0.55in
+    fontsize: 10pt
+    mainfont: "PT Sans Caption"
+    include-in-header: _panels.typ
+    keep-typ: false
+execute:
+  echo: false
+  warning: false
+---
+
+```{r}
+#| label: setup
+## Every label below is hand-written; the inventory is read from plugins/.
+## check_coverage() aborts this render if the two disagree, which is the whole
+## maintenance story for this sheet.
+source("R/inventory.R")
+
+inv <- scan_plugins("../plugins")
+mk <- scan_marketplace("../.claude-plugin/marketplace.json")
+policy_keys <- scan_policy_keys("../docs/installation.md")
+lic <- scan_licence("../LICENSE", "../plugins")
+repo <- scan_repository("../plugins")
+## The sheet is distributed on its own, so it has to carry its own attribution.
+## Both halves are read from the repository, and cross-checked, because the licence
+## here changed once already while this sheet was being written.
+stopifnot(identical(lic$holder, mk$owner))
+
+labels <- list(
+  ## -- skills ------------------------------------------------------------
+  "r-code-review/skill/verification-method" = "before you claim it works",
+  "r-geospatial/skill/raster-scale-and-memory" = "raster too big for RAM",
+  "r-geospatial/skill/spatial-objects-and-targets" = "pointers do not serialise",
+  "r-geospatial/skill/vector-geometry-hygiene" = "empty polygons, slivers",
+  "r-landis-ii/skill/landis-inputs" = "before a LANDIS run",
+  "r-landis-ii/skill/landis-outputs" = "reading a LANDIS map",
+  "r-package-dev/skill/package-change-workflow" = "a package you maintain",
+  "r-package-dev/skill/package-conventions" = "before air or document()",
+  "r-package-dev/skill/package-dependencies" = "no visible global function",
+  "r-project-core/skill/citation-integrity" = "any DOI or reference",
+  "r-project-core/skill/commit" = "write the commit",
+  "r-project-core/skill/design-log" = "work spanning sessions",
+  "r-project-core/skill/project-config-layout" = "a setting missed a worker",
+  "r-project-core/skill/project-policy" = "a guard fires wrongly",
+  "r-project-core/skill/r-style" = "writing or editing any R",
+  "r-reporting/skill/provenance-receipts" = "where data came from",
+  "r-reporting/skill/quarto-reports" = "a render landed oddly",
+  "r-reporting/skill/report-writing" = "prose someone else reads",
+  "r-spades/skill/module-contract" = "wiring a SpaDES module",
+  "r-spades/skill/spades-caching" = "re-runs it should not",
+  "r-targets/skill/hpc-cluster-runs" = "launch or stop a long run",
+  "r-targets/skill/targets-debugging" = "a target failed or hung",
+  "r-targets/skill/targets-project-setup" = "structuring _targets.R",
+  "r-targets/skill/targets-staleness" = "up to date, but is not",
+  "r-targets/skill/targets-testing-ci" = "tests and CI for pipelines",
+  ## -- bundles ----------------------------------------------------------
+  "r-bundle-research/bundle" = "an R research project",
+  "r-bundle-spades/bundle" = "research, plus SpaDES",
+  "r-bundle-landis/bundle" = "research, plus LANDIS-II",
+  ## -- review subagents --------------------------------------------------
+  "r-code-review/agent/dependency-auditor" = "an undeclared symbol",
+  "r-code-review/agent/pipeline-invalidation-auditor" = "silently stale targets",
+  "r-code-review/agent/run-forensics" = "a failed or odd run",
+  "r-code-review/agent/spatial-correctness-reviewer" = "CRS and geometry bugs",
+  ## -- hooks -------------------------------------------------------------
+  "r-package-dev/hook/check-doc-sync.sh" = "roxygen ahead of man/",
+  "r-package-dev/hook/guard-news-dev-heading.sh" = "a numbered NEWS heading",
+  "r-package-dev/hook/rbuildignore-claude.sh" = ".claude into .Rbuildignore",
+  "r-project-core/hook/advise-bash-hygiene.sh" = "a leading cd, a timeout",
+  "r-project-core/hook/check-citations.sh" = "resolves every DOI written",
+  "r-project-core/hook/guard-ascii.sh" = "non-ASCII in R, qmd, bib",
+  "r-project-core/hook/guard-destructive.sh" = "throws away real work",
+  "r-project-core/hook/guard-generated-files.sh" = "editing generated files",
+  "r-project-core/hook/guard-host-names.sh" = "a machine name published",
+  "r-project-core/hook/guard-long-run-interlock.sh" = "installs during a live run",
+  "r-project-core/hook/guard-mcp.sh" = "MCP tools that write",
+  "r-project-core/hook/guard-policy.sh" = "installs, air, heavy work",
+  "r-project-core/hook/guard-process-ownership.sh" = "killing what is not yours",
+  "r-project-core/hook/guard-staging.sh" = "git add -A, commit -a",
+  "r-project-core/hook/r-format-and-parse.sh" = "parses and formats your R",
+  "r-project-core/hook/session-context.sh" = "host, policy, runs, branch"
+)
+
+check_coverage(inv, labels)
+
+plugin_for <- c(
+  "r-project-core" = "every R research project",
+  "r-package-dev" = "R package development",
+  "r-targets" = "{targets} pipelines",
+  "r-geospatial" = "GIS and spatial analysis",
+  "r-spades" = "SpaDES modules",
+  "r-landis-ii" = "LANDIS-II integration",
+  "r-reporting" = "reports and provenance",
+  "r-code-review" = "software review"
+)
+
+by_project <- list(
+  "R package" = "core, package-dev, code-review",
+  "{targets} pipeline" = "core, targets, code-review",
+  "Spatial / GIS" = "core, geospatial, targets",
+  "produces reports" = "add reporting"
+)
+
+## Nothing auto-adds another marketplace, so every marketplace this one is allowed
+## to depend on is a manual step the sheet must name. Keyed by marketplace name.
+external_marketplaces <- list("posit-dev-skills" = "posit-dev/skills")
+
+guards <- list(
+  c("git push --force", "--force-with-lease"),
+  c("git add -A / commit -a", "stage named paths"),
+  c("git reset --hard, clean -f", "stash, or checkout a named path"),
+  c("git branch -D", "git branch -d"),
+  c("install.packages()", "renv::install(\"owner/pkg\", lock = TRUE)"),
+  c("pkill / docker stop", "check ps, then # owner-verified:"),
+  c("heavy job on a controller", "dispatch it over ssh"),
+  c("editing NAMESPACE, man/*.Rd", "devtools::document()"),
+  c("non-ASCII in .R or .qmd", "the replacement the hook names"),
+  c("installing during a live run", "wait, or stop the run in order")
+)
+
+policy_effect <- c(
+  rBinary = "note on a bare Rscript",
+  packageInstall = "renv-only installs",
+  noAirFormat = "this repo forbids air",
+  publishRequiresApproval = "ask before push, gh, MCP",
+  controllerHosts = "no heavy compute on these",
+  hostPatterns = "ask before naming a host",
+  longRunPatterns = "what the interlock sees",
+  heavyCommands = "what counts as heavy",
+  asciiExtensions = "scope of the ASCII guard"
+)
+stopifnot(setequal(names(policy_effect), policy_keys))
+content_plugins <- setdiff(unique(inv$plugin), inv$plugin[inv$kind == "bundle"])
+stopifnot(setequal(names(plugin_for), content_plugins))
+stopifnot(setequal(names(external_marketplaces), mk$cross))
+
+kinds <- list(
+  "skills" = "advice, loaded only when it matches",
+  "hooks" = "rules, run on every turn, failing open",
+  "subagents" = "read-only reviewers, on request"
+)
+
+session_report <- c(
+  "the host, and whether it is a controller",
+  "the project policy that loaded, if any",
+  "long runs already going, marked as not yours",
+  "running containers and detached screens",
+  "the branch, and changes that predate the session",
+  "submodule pointers that have drifted"
+)
+
+## Skill names, so the panel can set them in the code face. Every one is a real
+## skill: the first five are third-party (superpowers, r-lib, quarto), the last is
+## the one here that replaces superpowers' finishing-a-development-branch.
+companions <- list(
+  "plan" = "brainstorming, writing-plans",
+  "implement" = "r-package-development, quarto-authoring",
+  "debug" = "systematic-debugging",
+  "verify" = "verification-before-completion",
+  "review" = "receiving-code-review",
+  "release" = "package-change-workflow"
+)
+
+own_hook <- list(
+  "identity" = "resolve the repo through git, not the working directory",
+  "deny" = "only where a safe alternative exists to take",
+  "ask" = "for what is fine once a person has looked",
+  "context" = "to inform without blocking a risky command"
+)
+
+## -- emitting Typst ------------------------------------------------------
+typ_str <- function(x) {
+  x <- gsub("\\", "\\\\", x, fixed = TRUE)
+  x <- gsub("\"", "\\\"", x, fixed = TRUE)
+  paste0("\"", x, "\"")
+}
+
+## Raw Typst has to be fenced, or pandoc renders the code as prose.
+emit <- function(...) {
+  cat("```{=typst}\n")
+  cat(paste0(c(...), collapse = "\n"), "\n", sep = "")
+  cat("```\n")
+}
+
+n_of <- function(plugin, kind) sum(inv$plugin == plugin & inv$kind == kind)
+
+## Every panel body is ONE grid, so names align down the whole panel instead of
+## restarting at each group. Subheads span both columns.
+panel_body <- function(cells) paste0("#rowsg(", paste(cells, collapse = ", "), ")")
+
+head_cell <- function(title, count = NULL) {
+  paste0(
+    "span2(subhead(", typ_str(title),
+    if (is.null(count)) "" else paste0(", count: ", typ_str(count)), "))"
+  )
+}
+
+pair_cells <- function(x, mono_left = TRUE) {
+  vapply(names(x), function(k) {
+    left <- if (mono_left) paste0("mono(", typ_str(k), ")") else paste0("note(", typ_str(k), ")")
+    paste0(left, ", note(", typ_str(x[[k]]), ")")
+  }, character(1L))
+}
+
+bullet_cells <- function(x) paste0("dot, note(", typ_str(x), ")")
+
+## Bundle contents read better without the repeated r- and r-bundle- prefixes.
+short_deps <- function(x) {
+  parts <- strsplit(x, ", ", fixed = TRUE)[[1L]]
+  paste(sub("^r-", "", sub("^r-bundle-", "", parts)), collapse = ", ")
+}
+
+bundle_cells <- function() {
+  rows <- inv[inv$kind == "bundle", ]
+  rows <- rows[order(grepl("r-bundle-", rows$deps), rows$name), ]
+  cells <- vapply(seq_len(nrow(rows)), function(i) {
+    paste0(
+      "mono(", typ_str(rows$name[i]), "), ",
+      "note(", typ_str(labels[[rows$id[i]]]), ") + linebreak() + ",
+      "subnote(", typ_str(short_deps(rows$deps[i])), ")"
+    )
+  }, character(1L))
+  ## a spacer row between bundles: the contents line wraps, and without this it
+  ## reads as belonging to the name below it
+  utils::head(as.vector(rbind(cells, "[], []")), -1L)
+}
+
+skill_cells <- function(plugin) {
+  rows <- inv[inv$plugin == plugin & inv$kind == "skill", ]
+  rows <- rows[order(rows$name), ]
+  c(
+    head_cell(plugin, nrow(rows)),
+    vapply(seq_len(nrow(rows)), function(i) {
+      nm <- if (rows$slash_only[i]) paste0("/", rows$name[i]) else rows$name[i]
+      paste0(
+        "mono(", typ_str(nm), ")", if (rows$scoped[i]) " + scoped" else "",
+        ", note(", typ_str(labels[[rows$id[i]]]), ")"
+      )
+    }, character(1L))
+  )
+}
+
+hook_cells <- function(plugin, event, matcher, title) {
+  rows <- inv[inv$plugin == plugin & inv$kind == "hook" & inv$event == event, ]
+  rows <- if (is.na(matcher)) {
+    rows[is.na(rows$matcher), ]
+  } else {
+    rows[!is.na(rows$matcher) & rows$matcher == matcher, ]
+  }
+  rows <- rows[order(rows$name), ]
+  c(
+    head_cell(title, nrow(rows)),
+    vapply(seq_len(nrow(rows)), function(i) {
+      paste0(
+        "mono(", typ_str(sub("\\.sh$", "", rows$name[i])), "), ",
+        "note(", typ_str(labels[[rows$id[i]]]), ")"
+      )
+    }, character(1L))
+  )
+}
+```
+
+```{r}
+#| label: front
+#| output: asis
+n_skill <- sum(inv$kind == "skill")
+n_hook <- length(unique(inv$id[inv$kind == "hook"]))
+n_agent <- sum(inv$kind == "agent")
+n_bundle <- sum(inv$kind == "bundle")
+
+## Core first, then the domains in rough order of how often they apply.
+skill_order <- c("r-project-core", "r-targets", "r-geospatial", "r-package-dev",
+                 "r-reporting", "r-spades", "r-landis-ii", "r-code-review")
+stopifnot(setequal(skill_order, unique(inv$plugin[inv$kind == "skill"])))
+
+plugin_counts <- function(p) {
+  paste0(
+    n_of(p, "skill"), " / ",
+    length(unique(inv$id[inv$plugin == p & inv$kind == "hook"])), " / ",
+    n_of(p, "agent")
+  )
+}
+
+emit(
+  "#show: doc => sheet-typography(colophon-left: ",
+  typ_str(paste0(
+    mk$name, " v", mk$version, "   |   Copyright (c) ", lic$year, " ", lic$holder,
+    "   |   ", lic$spdx, " licence"
+  )),
+  ", colophon-right: ", typ_str(repo), ", doc)"
+)
+emit(
+  "#titlebar(", typ_str(mk$name), ", ",
+  typ_str("for R research software"), ", ",
+  typ_str(paste0(
+    "v", mk$version, "  |  ", length(content_plugins), " plugins, ", n_bundle,
+    " bundles   |   ", n_skill, " skills   |   ", n_hook, " hooks   |   ", n_agent, " agents"
+  )), ")"
+)
+
+## The left column is the setup path, read top to bottom and ending in the commands;
+## the right column is the reference. That keeps the skills index whole rather than
+## splitting it across the fold, and puts install inside the first column a reader
+## scans rather than halfway down the second.
+col_a <- c(
+  "#panel(\"plugins\", count: \"skills / hooks / subagents\")[",
+  paste0("#rows3(", paste(vapply(names(plugin_for), function(p) {
+    paste0(
+      "mono(", typ_str(p), "), note(", typ_str(plugin_for[[p]]), "), ",
+      "note(", typ_str(plugin_counts(p)), ")"
+    )
+  }, character(1L)), collapse = ", "), ")"),
+  "]",
+  "#panel(\"bundles: enable one per project\", count: \"3\")[",
+  panel_body(bundle_cells()),
+  "]",
+  "#panel(\"or enable plugins directly\")[",
+  panel_body(pair_cells(by_project, mono_left = FALSE)),
+  "]",
+  "#panel(\"install: add BOTH marketplaces\")[",
+  "#subhead(\"1. add the marketplaces\")",
+  "#codeline(\"/plugin marketplace add FOR-CAST/ai_workflows\")",
+  unlist(lapply(external_marketplaces, function(repo) {
+    paste0("#codeline(", typ_str(paste0("/plugin marketplace add ", repo)), ")")
+  })),
+  paste0("#notepara[#emph[Nothing auto-adds another marketplace.] r-package-dev depends ",
+         "on #raw(\"r-lib@posit-dev-skills\"), so add both before installing anything; ",
+         "either order works. Skip the posit one and r-package-dev reports r-lib as not ",
+         "installed, while every bundle above it reports the dependency disabled.]"),
+  "#subhead(\"2. enable a bundle, then set policy\")",
+  "#codeline(\"/plugin install r-bundle-research@ai-workflows\")",
+  "#codeline(\"/r-project-core:project-policy\")",
+  "#subhead(\"3. share the setup with the project\")",
+  paste0("#notepara[#raw(\".claude/settings.json\") carries #raw(\"extraKnownMarketplaces\") ",
+         "and #raw(\"enabledPlugins\"). Declare the posit marketplace there too, though ",
+         "nothing here enables a plugin from it: that is what lets the dependency ",
+         "resolve. The #raw(\"claude plugin\") CLI does not read project settings, so ",
+         "install from inside a session, once the folder is trusted.]"),
+  "]",
+  "#panel(\"uninstall, or just turn it off\")[",
+  "#subhead(\"stop it, remove it, or forget the source\")",
+  "#codeline(\"/plugin disable r-package-dev@ai-workflows\")",
+  "#codeline(\"/plugin uninstall r-bundle-research@ai-workflows\")",
+  "#codeline(\"/plugin prune\")",
+  "#codeline(\"/plugin marketplace remove ai-workflows\")",
+  paste0("#notepara[#raw(\"disable\") keeps a plugin installed but inert. ",
+         "#raw(\"uninstall\") removes it, and #raw(\"prune\") then drops the dependencies ",
+         "it pulled in that nothing else needs, which is worth running after removing ",
+         "a bundle.]"),
+  "#subhead(\"or switch off one piece\")",
+  paste0("#notepara[One hook: drop its entry from that plugin\'s #raw(\"hooks/hooks.json\"). ",
+         "All of them: #raw(\"disableAllHooks\") in settings. One policy rule: remove its ",
+         "key from #raw(\"r-project-policy.json\").]"),
+  "]"
+)
+
+col_b <- c(
+  "#panel(\"three kinds of tooling\")[",
+  panel_body(pair_cells(kinds)),
+  "]",
+  paste0("#panel(\"skills: when to reach for them\", count: \"", n_skill, "\")["),
+  panel_body(unlist(lapply(skill_order, skill_cells))),
+  "]",
+  "#panel(\"review subagents\", count: \"4, read-only\")[",
+  panel_body(vapply(
+    inv$id[inv$kind == "agent"],
+    function(id) {
+      paste0("mono(", typ_str(sub("^.*/", "", id)), "), note(", typ_str(labels[[id]]), ")")
+    },
+    character(1L)
+  )),
+  "]",
+  "#panel(\"companions, by workflow stage\")[",
+  panel_body(vapply(names(companions), function(k) {
+    paste0("stage(", typ_str(k), "), mono(", typ_str(companions[[k]]), ")")
+  }, character(1L))),
+  "#v(2pt)",
+  paste0("#notepara[#emph[Which third-party skills to pair with these, and which to ",
+         "avoid, is in docs/third-party.md.]]"),
+  "]",
+  paste0("#footnote-strip[#scoped = paths-scoped: the skill wakes only on matching files. ",
+         "/name = slash command only, never auto-invoked. Plugin counts are ",
+         "skills / hooks / subagents.]")
+)
+
+emit("#cols2([", paste(col_a, collapse = "\n"), "], [", paste(col_b, collapse = "\n"), "])")
+```
+
+```{r}
+#| label: back
+#| output: asis
+emit("#pagebreak()")
+emit(
+  "#titlebar(", typ_str("what stops you"), ", ",
+  typ_str("hooks, policy, and the way forward"), ", ",
+  typ_str("every hook fails open"), ")"
+)
+
+n_reg_core <- sum(inv$kind == "hook" & inv$plugin == "r-project-core")
+n_reg_pkg <- sum(inv$kind == "hook" & inv$plugin == "r-package-dev")
+
+col_a <- c(
+  paste0("#panel(\"hooks: r-project-core\", count: \"", n_reg_core, " registrations\")["),
+  panel_body(c(
+    hook_cells("r-project-core", "SessionStart", NA, "SessionStart"),
+    hook_cells("r-project-core", "PreToolUse", "Bash", "PreToolUse / Bash"),
+    hook_cells("r-project-core", "PreToolUse", "Edit|Write|NotebookEdit",
+               "PreToolUse / Edit, Write, Notebook"),
+    hook_cells("r-project-core", "PreToolUse", "mcp__.*", "PreToolUse / MCP tools"),
+    hook_cells("r-project-core", "PostToolUse", "Edit|Write", "PostToolUse / Edit, Write")
+  )),
+  "]",
+  paste0("#panel(\"hooks: r-package-dev\", count: \"", n_reg_pkg, " registrations\")["),
+  panel_body(c(
+    hook_cells("r-package-dev", "PreToolUse", "Edit|Write", "PreToolUse / Edit, Write"),
+    hook_cells("r-package-dev", "PostToolUse", "Edit|Write", "PostToolUse / Edit, Write"),
+    hook_cells("r-package-dev", "Stop", NA, "Stop")
+  )),
+  "]",
+  paste0("#panel(\"project policy\", count: \"", length(policy_keys), " keys\")["),
+  paste0("#notepara[#emph[.claude/r-project-policy.json: every rule is off until the repo ",
+         "opts in. Generate one with /r-project-core:project-policy.]]"),
+  "#v(3.5pt)",
+  panel_body(pair_cells(as.list(policy_effect))),
+  "]"
+)
+
+col_b <- c(
+  "#panel(\"a guard fired, do this instead\")[",
+  vapply(guards, function(g) {
+    paste0("#guardrow(", typ_str(g[1]), ", ", typ_str(g[2]), ")")
+  }, character(1L)),
+  "]",
+  "#panel(\"the session report\", count: \"SessionStart\")[",
+  panel_body(bullet_cells(session_report)),
+  "]",
+  "#panel(\"writing your own hook\")[",
+  panel_body(pair_cells(own_hook, mono_left = FALSE)),
+  "]",
+  paste0("#footnote-strip[A deny cannot be approved from the permission prompt; an ask can. ",
+         "If a guard fires when it should not, the fix is almost always a policy value ",
+         "rather than a code change.]")
+)
+
+emit("#cols2([", paste(col_a, collapse = "\n"), "], [", paste(col_b, collapse = "\n"), "])")
+```
