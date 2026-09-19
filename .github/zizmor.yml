@@ -1,0 +1,9 @@
+## zizmor configuration. Auto-discovered from .github/zizmor.yml.
+rules:
+  unpinned-uses:
+    ignore:
+      ## The CI template that targets-testing-ci ships is copied into other repos, so
+      ## it pins actions by major tag rather than by SHA: a SHA here would go stale
+      ## with nothing to bump it, because Dependabot only maintains .github/workflows.
+      ## The file tells the copier to pin and enable Dependabot in their own repo.
+      - check.yaml

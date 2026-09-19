@@ -30,7 +30,15 @@ jobs:
       ## passes repos explicitly -- stock R has no default mirror and would fail.
       R_PROFILE_USER: /dev/null
     steps:
+      ## Tags, not SHAs, because this template is copied: a SHA pinned here goes stale
+      ## with nothing to bump it, while a major tag keeps itself current. Once this
+      ## lands in your repo, pin the actions to SHAs and let Dependabot
+      ## (.github/dependabot.yml, "github-actions") maintain them.
+      ## persist-credentials: false keeps the token out of .git/config, where an
+      ## artifact upload or a cache of the workspace would carry it along.
       - uses: actions/checkout@v7      # ADJUST: check the current major before copying
+        with:
+          persist-credentials: false
       - uses: r-lib/actions/setup-r@v2
         with:
           r-version: renv
@@ -64,6 +72,8 @@ jobs:
       PIPELINE_AS_CI: "true"           # ADJUST: the project's own switch for the CI graph, if any
     steps:
       - uses: actions/checkout@v7      # no `submodules:` -- packages restore from renv.lock
+        with:
+          persist-credentials: false
 
       - uses: r-lib/actions/setup-r@v2
         with:

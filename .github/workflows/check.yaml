@@ -33,6 +33,7 @@ jobs:
           node-version: 22
 
       - name: Install Claude Code
+        # zizmor: ignore[adhoc-packages] the CLI is pinned by version and is the tool under test
         run: npm install -g --include=optional "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}"
 
       - name: Validate marketplace and plugin manifests
@@ -82,6 +83,49 @@ jobs:
 
       - name: Run hook tests
         run: '"$RUNNER_TEMP/bats-core/bin/bats" tests/hooks'
+
+  workflows:
+    name: Workflow lint and audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      ACTIONLINT_VERSION: "1.7.12"
+      ZIZMOR_VERSION: "1.30.1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install actionlint
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v="$ACTIONLINT_VERSION"
+          cd "$RUNNER_TEMP"
+          gh release download "v$v" --repo rhysd/actionlint \
+            --pattern "actionlint_${v}_linux_amd64.tar.gz" \
+            --pattern "actionlint_${v}_checksums.txt"
+          sha256sum --check --ignore-missing "actionlint_${v}_checksums.txt"
+          tar -xzf "actionlint_${v}_linux_amd64.tar.gz" actionlint
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+
+      # The shipped template is linted too: it is what users copy, so a mistake there
+      # is reproduced in every project that follows the skill.
+      - name: actionlint, on our workflows and on the shipped template
+        run: |
+          actionlint -color
+          actionlint -color plugins/r-targets/skills/targets-testing-ci/assets/check.yaml
+
+      - name: Install zizmor
+        run: pipx install "zizmor==$ZIZMOR_VERSION"
+
+      # Offline: no token, no network, same answer every run. The template's expected
+      # unpinned-uses findings are waived in .github/zizmor.yml, which also records why.
+      - name: zizmor, on our workflows and on the shipped template
+        run: |
+          zizmor --persona=regular --no-progress --no-online-audits .github/workflows
+          zizmor --persona=regular --no-progress --no-online-audits \
+            plugins/r-targets/skills/targets-testing-ci/assets/check.yaml
 
   skills:
     name: Skill validation
@@ -149,7 +193,7 @@ jobs:
   release-tags:
     name: Tag plugin releases
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [manifests, hooks, skills]
+    needs: [manifests, hooks, skills, workflows]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
@@ -165,6 +209,7 @@ jobs:
           node-version: 22
 
       - name: Install Claude Code
+        # zizmor: ignore[adhoc-packages] the CLI is pinned by version and is the tool under test
         run: npm install -g --include=optional "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}"
 
       - name: Tag plugin versions that have no release tag yet

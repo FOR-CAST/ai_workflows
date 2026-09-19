@@ -18,6 +18,7 @@ a control node.
 | Hook behaviour | `bats tests/hooks` | every guard's decisions, plus a portability lint and shellcheck. CI runs it on Ubuntu **and** macOS |
 | Cheatsheet | `./cheatsheet/render.sh` | a skill, hook or subagent with no entry on the printed sheet, and an entry left behind after one is removed. The render aborts and names the id |
 | Skills | `.github/scripts/check-skills.sh` | skill structure, frontmatter, links and token budgets ([skill-validator](https://github.com/agent-ecosystem/skill-validator)) |
+| Workflows | `actionlint` and `zizmor --persona=regular`, over `.github/workflows` **and** the CI template the `targets-testing-ci` skill ships | workflow syntax and shell bugs; credentials left in `.git/config`, unpinned actions, injectable expressions |
 
 Tools: `claude`, `jq`, [bats-core](https://github.com/bats-core/bats-core),
 `shellcheck` (optional; its test is skipped without it), and `skill-validator`.
@@ -131,6 +132,19 @@ and a description on one line, so nearly every entry wrapped.
 **0.55in bottom margin.** The colophon lives in the page margin. At 0.30in it landed
 0.09in from the paper edge, inside the unprintable margin of most printers; it now
 clears by 0.34in, measured on both pages with `pdftotext -bbox`.
+
+## Pinning: SHAs here, tags in the shipped template
+
+Our own workflows pin every action to a SHA, and Dependabot
+([`.github/dependabot.yml`](../.github/dependabot.yml)) keeps those current.
+
+The CI template under `targets-testing-ci/assets/check.yaml` pins by major tag
+instead, and that is deliberate: it is copied into other repositories, where nothing
+bumps it. A SHA pinned there would rot, and the copier would inherit a year-old
+action; a major tag keeps itself current. The template tells the copier to pin to
+SHAs and enable Dependabot in their own repo, which is where Dependabot can do the
+work. The resulting `unpinned-uses` findings are waived, for that file only, in
+[`.github/zizmor.yml`](../.github/zizmor.yml).
 
 ## Versions and releases
 
