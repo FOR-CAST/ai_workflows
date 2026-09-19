@@ -77,7 +77,9 @@ in.
 
 Notes:
 
-- Needs `quarto` and R with `yaml`, `jsonlite` and `knitr`. Quarto bundles Typst, so
+- Needs `quarto` and R with `yaml`, `jsonlite`, `knitr` and `rmarkdown` -- the last is
+  unused by the document, but Quarto's knitr engine refuses a `.qmd` without it.
+  Quarto bundles Typst, so
   **no TeX is needed**, on any machine or in CI.
 - `render.sh` pins `SOURCE_DATE_EPOCH`, so re-rendering an unchanged sheet produces
   byte-identical output and leaves the working tree clean. Without it Typst stamps
