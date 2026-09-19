@@ -1,14 +1,18 @@
 ---
 name: commit
-description: Write a commit in the FOR-CAST house style -- Conventional Commits with a scope, a contrastive subject that states the decision, and a body that reads as lab notes (measurement, falsified hypothesis, verification, downstream consequences). Stages named paths only, checks submodule pointers against the remote, and appends the Co-Authored-By trailer.
+description: Write a succinct commit -- Conventional Commits with a scope, an imperative subject under about 70 characters, and a body of one to three lines saying why; long forensics go to the pull request body, NEWS.md or the project's CLAUDE.md instead. Stages named paths only, checks submodule pointers against the remote, and appends the Co-Authored-By trailer. Also covers pull request descriptions.
 argument-hint: "[optional: what changed, or paths to stage]"
 disable-model-invocation: true
 allowed-tools: Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git add:*), Bash(git commit:*), Bash(git submodule status:*), Bash(git -C:*), Bash(git ls-files:*), Read, Grep
 ---
 
-# Commit, house style
+# Commit messages
 
 Run this only when the user asks for a commit. Never commit unprompted.
+
+A commit message is writing, so the writing rules apply: plain words, no stock
+phrasing, nothing a reader has to decode. `r-reporting:report-writing` holds the
+full list; the short version is that if a sentence reads as generated, it is.
 
 ## 1. Look before staging
 
@@ -64,35 +68,56 @@ Types actually used, in frequency order: `feat`, `fix`, `chore`, `docs`,
 sub-project (`prep-fit:`, `predict:`). Package repos also use a `[vX.Y.Z]` subject
 prefix on the commit that bumps `Version:`.
 
-**The subject states the decision, not the area touched.** The house pattern is
-contrastive -- "X, not Y":
+**The subject states the decision, not the area touched.** Lowercase, no trailing
+period, and **under about 70 characters**:
 
 ```
-fix(ic): landis_datatype() takes the max map code, not the raster
-fix(growth): the comparator sets are priors, not published, and not independent
-revert(ic): keep overrideBiomassInFires ON -- turning it off made things worse
+fix(ic): landis_datatype() takes the max map code
+fix(growth): treat the comparator sets as priors
+revert(ic): keep overrideBiomassInFires ON
 ```
+
+A contrast ("X, not Y") earns its place only when the contrast *is* the decision and
+the wrong option was actually taken. As a reflex it is filler -- and the same
+constructed contrast is banned in report prose.
 
 ASCII only: `--` for a dash, `->` for an arrow.
 
-## 4. Write the body -- this is the part that matters
+## 4. Keep the body to one to three lines
 
-Bodies here average ~21 lines and read as lab notes. Include, where each applies:
+> "Commit with a succinct message (imperative subject + 1-3 body lines; long
+> forensics belong in NEWS / the PR body, not the commit)."
 
-- **the measurement**, with numbers (a small table is normal);
-- **the hypothesis that was falsified**, so the dead end is not retried;
-- **the verification performed** (`tar_validate() passes (24 targets)`, a synthetic
-  test case with exact expected values, an independent reference comparison);
-- **what is invalidated downstream** -- name the targets;
-- **known consequences** still outstanding.
+That is the project rule, and it is the one to follow. Say **why**, in a line or two;
+the diff already shows what changed. Wrap at ~90 characters.
 
-Two house conventions worth keeping:
+```
+chore(landisutils): bump to 0.0.152 for the FPSM log-check fix
 
-- A rejected option is recorded with its numbers, marked `NOT DISCARDED`, *"because
-  without the specific reasons written down this is easy to re-derive and re-adopt."*
-- A `LESSON:` line when the commit encodes a process fix rather than a code fix.
+Only a benign missing-substitution-factor message no longer fails a run.
+```
 
-Wrap at ~90 characters.
+**Do not infer the style from `git log`.** Most recent commits in these repos are
+machine-written and much longer than this rule, because correcting each one was more
+tedious than letting it stand. The log is not the standard; this is.
+
+Where the long version belongs instead:
+
+| Material | Goes in |
+| --- | --- |
+| measurements, falsified hypotheses, dead ends | the pull request body, or a `_tmp_<slug>.md` for review |
+| user-visible behaviour change | `NEWS.md` (packages) |
+| a change to numbers a report states | one line in the commit saying results change, with the accounting in the README's corrections section |
+| a process lesson | the project's `CLAUDE.md`, where it will actually be read again |
+
+## 4a. If the change goes through a pull request
+
+Keep it to roughly 150-250 words, in this order: why the change was needed, what it
+does, how it was verified (exact numbers), and **what was not done or not checked**.
+That last part is the most useful section in the record and the easiest to omit.
+
+Use the repository's PR template where one exists, and answer its checklist honestly
+-- annotate a box that does not apply with the reason rather than ticking it.
 
 ## 5. Trailer
 

@@ -94,8 +94,10 @@ is generated and which file to edit instead.
 - One sentence per line in prose. It makes diffs readable and review specific.
 - Chunk options as `#|` pipe comments, not fence-header options.
 - Reference sections and figures **by name**, never by line number.
-- End with `\newpage`, `# References {.unnumbered}`, and a `::: {#refs} :::` div, so
-  references render on a new page **before** any appendices.
+- End with `\clearpage`, `# References {.unnumbered}`, and a `::: {#refs} :::` div, so
+  references render on a new page **before** any appendices. Use `\clearpage`, not
+  `\newpage`: it flushes pending floats first, so a figure cannot drift past the
+  references into the appendix. One project enforces this in a test.
 - Underscore-prefixed fragments (`reports/_provenance-appendix.qmd`) are includes,
   never rendered standalone; pull them in with
   `{{< include _provenance-appendix.qmd >}}`.

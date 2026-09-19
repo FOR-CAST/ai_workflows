@@ -27,12 +27,22 @@ decisions are pending, batch them into the same prompt.
   recommended option so confirming it costs one click.
 - If the user has already named the audience for this document in the current
   conversation, do not ask again.
+- **The default, offered first unless the project says otherwise: scientists,
+  especially ecologists, who are not programmers or software engineers.** That is who
+  these documents are usually for, and it sets the register -- ecological terms of art
+  are fine and need no gloss; target names, function names and file paths are not.
 - Offer concrete options, adjusted to the project, for example:
-  - decision-makers, managers or funders;
+  - scientists, especially ecologists, who do not model (the usual default);
   - domain scientists with some modelling background;
+  - decision-makers, managers or funders, or a policy audience -- which can fix a
+    unit choice, as reporting in CO2e rather than carbon does;
+  - community or Indigenous partners, or rights holders whose authority governs how
+    the results may be used;
   - technical collaborators who will run or extend the code;
-  - community or Indigenous partners, or the public;
   - peer reviewers.
+- A single document can carry more than one of these. Where two registers genuinely
+  both apply, write the body for the less technical one and give the other its own
+  section or appendix, rather than blending them into prose that serves neither.
 - If it is unclear what the reader needs to *do* with the document (decide
   something, reproduce something, review something), ask that in the same prompt.
 
@@ -89,6 +99,14 @@ first sentence says what the figure shows, not what it is a plot of.
 - **Numbers carry units and honest precision.** Round to what the data supports, and
   state uncertainty once, quantified where possible, rather than hedging every
   sentence.
+- **Do not "correct" domain terminology.** A readability pass normalises unfamiliar
+  spellings by reflex, and scientific prose is full of terms of art that look like
+  typos -- coinages such as "evaludation" in ecological modelling, species names,
+  agency vocabulary. Before changing a term, check the source it is cited from and
+  check whether another document in the project uses it. When a coined term is kept,
+  mark the spelling as deliberate (quotes or italics) and put the citation right after
+  its first use; in a heading use quotes only, since a citation there renders into the
+  table of contents.
 - **Use words with a technical meaning only in that meaning.** In a scientific
   report, "significant" means statistically significant, "robust" has a statistical
   sense, and "landscape" may be the literal study unit. Pick another word otherwise.
@@ -119,6 +137,17 @@ on sight:
   emoji, and em-dashes (use `--`, or better, two sentences).
 - **Self-reference and pleasantries:** "I hope this helps", "As an AI", "Great
   question".
+- **Punchy idioms and aphorisms.** A short dramatic sentence standing in for the
+  explanation: "this is where it bites", "that is the whole point", "here is the
+  thing", "the trap is X", "it is worth stating plainly". They read as insight and
+  carry none. Say the mechanism instead: *"A stale pointer fails the next node sync"*,
+  not *"this is where it bites"*.
+- **Euphemism and folksiness.** One project states the rule directly: *"No
+  euphemistic language in user-facing docs ('where the bytes land', 'baked in',
+  'just works'). Say what actually happens: 'the file is written to ...'."*
+
+This applies to everything a reader sees, not only reports: commit messages, pull
+request bodies, issue comments, READMEs, and replies in the session.
 
 The test for each sentence: would a careful human expert in this field have written
 it? If a sentence could be deleted without the reader losing anything, delete it.

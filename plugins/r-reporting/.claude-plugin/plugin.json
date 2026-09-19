@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "r-reporting",
   "displayName": "Quarto Reporting and Provenance",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Reports and provenance for research deliverables: writing for a stated audience (the user is always asked who the reader is; plain-language summary first, technical detail later or in appendices, no jargon or machine-written phrasing), Quarto project-mode path behaviour and the stale-PDF trap, rendering from a pipeline, deriving report numbers from the pipeline so prose cannot drift, draft marking for AI-assisted content, and input manifests and reproducibility receipts. Chart design is left to the dataviz and r-lib:alt-text skills.",
   "author": {
     "name": "Alex Chubaty",
