@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "r-bundle-landis",
+  "displayName": "LANDIS-II Driven Project (bundle)",
+  "version": "0.1.0",
+  "description": "The r-bundle-research set plus r-landis-ii, for a project that writes LANDIS-II inputs and reads its outputs. Ships no skills or hooks of its own. Add r-bundle-spades alongside it where SpaDES modules also run; the shared plugins resolve once.",
+  "author": {
+    "name": "Alex Chubaty",
+    "email": "achubaty@for-cast.ca"
+  },
+  "repository": "https://github.com/FOR-CAST/ai_workflows",
+  "license": "MIT",
+  "keywords": [
+    "r",
+    "bundle",
+    "landis-ii",
+    "simulation",
+    "targets"
+  ],
+  "dependencies": [
+    "r-bundle-research",
+    "r-landis-ii"
+  ]
+}

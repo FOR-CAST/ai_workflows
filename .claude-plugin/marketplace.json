@@ -11,6 +11,45 @@
   },
   "plugins": [
     {
+      "name": "r-bundle-landis",
+      "source": "./plugins/r-bundle-landis",
+      "description": "The r-bundle-research set plus r-landis-ii, for a project that writes LANDIS-II inputs and reads its outputs.",
+      "category": "research-software",
+      "keywords": [
+        "r",
+        "bundle",
+        "landis-ii",
+        "simulation",
+        "targets"
+      ]
+    },
+    {
+      "name": "r-bundle-research",
+      "source": "./plugins/r-bundle-research",
+      "description": "One entry that enables the plugins an R research project uses on every session: r-project-core, r-targets, r-geospatial, r-reporting, r-code-review and r-package-dev. Enabling it enables those; r-package-dev in turn pulls the r-lib skills it defers to.",
+      "category": "research-software",
+      "keywords": [
+        "r",
+        "bundle",
+        "research",
+        "targets",
+        "reproducibility"
+      ]
+    },
+    {
+      "name": "r-bundle-spades",
+      "source": "./plugins/r-bundle-spades",
+      "description": "The r-bundle-research set plus r-spades, for a project that runs SpaDES modules from a targets pipeline.",
+      "category": "research-software",
+      "keywords": [
+        "r",
+        "bundle",
+        "spades",
+        "simulation",
+        "targets"
+      ]
+    },
+    {
       "name": "r-code-review",
       "source": "./plugins/r-code-review",
       "description": "Read-only review subagents for the failure classes that research R code produces instead of errors: spatial correctness, pipeline invalidation, dependency declaration, and reproducibility. Plus the measure-against-an-independent-reference method these projects use to catch bugs that no test would have caught.",
@@ -117,5 +156,8 @@
         "reproducibility"
       ]
     }
+  ],
+  "allowCrossMarketplaceDependenciesOn": [
+    "posit-dev-skills"
   ]
 }

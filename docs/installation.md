@@ -15,6 +15,18 @@ From GitHub, once pushed:
 /plugin marketplace update ai-workflows      # refresh later
 ```
 
+Add the r-lib marketplace too:
+
+```sh
+/plugin marketplace add posit-dev/skills
+```
+
+`r-package-dev` **depends** on `r-lib@posit-dev-skills`, because its skills are
+deltas on top of those and say so. Nothing auto-adds another marketplace: install
+`r-package-dev` (or any bundle containing it) without this and it reports r-lib as
+not installed, and every bundle above it inherits the error. Once the marketplace
+is known, r-lib installs itself as a dependency.
+
 Third-party marketplaces, this one included, have auto-update **off** by default.
 Run `/plugin marketplace update ai-workflows`, then `/reload-plugins`, to pick up
 changes. A plugin updates only when its `version` in `plugin.json` changes; CI
@@ -22,8 +34,27 @@ refuses a change to a plugin's files without that bump.
 
 ## What to enable, by project type
 
+### Bundles, for a whole project
+
+A bundle is a plugin that is only a name and a list of dependencies. Enabling one
+enables everything under it, transitively, so a project declares a single entry
+instead of six.
+
+| Bundle | Pulls in |
+| --- | --- |
+| `r-bundle-research` | `r-project-core`, `r-targets`, `r-geospatial`, `r-reporting`, `r-code-review`, `r-package-dev` (and r-lib through it) |
+| `r-bundle-spades` | `r-bundle-research` plus `r-spades` |
+| `r-bundle-landis` | `r-bundle-research` plus `r-landis-ii` |
+
+A project that runs SpaDES modules *and* drives LANDIS-II enables both simulation
+bundles; the shared plugins resolve once. Together they cost roughly 5.5k tokens
+of always-on context.
+
+### Individual plugins, for a narrower set
+
 Enable `r-project-core` everywhere. Add the domain plugins the project actually
-uses -- every enabled plugin costs context on every turn.
+uses -- every enabled plugin costs context on every turn (`claude plugin details
+<name>` prints the figure).
 
 | Project type | Enable |
 | --- | --- |
@@ -43,19 +74,25 @@ Add to the project's `.claude/settings.json` so collaborators get the same setup
   "extraKnownMarketplaces": {
     "ai-workflows": {
       "source": { "source": "github", "repo": "FOR-CAST/ai_workflows" }
+    },
+    "posit-dev-skills": {
+      "source": { "source": "github", "repo": "posit-dev/skills" }
     }
   },
   "enabledPlugins": {
-    "r-project-core@ai-workflows": true,
-    "r-targets@ai-workflows": true,
-    "r-geospatial@ai-workflows": true
+    "r-bundle-spades@ai-workflows": true
   }
 }
 ```
 
+Declare the posit marketplace even though nothing here enables a plugin from it:
+it is what lets the r-lib dependency resolve when someone installs.
+
 A plugin from an external source is not installed automatically for a collaborator
 by enabling it here -- Claude Code reports it as not installed and shows the
-`claude plugin install` command to run.
+`claude plugin install` command to run. The marketplaces above are registered when
+they trust the folder in a session; the `claude plugin` CLI on its own does not
+read project settings, so run the install from inside a session in the project.
 
 ## The project policy file
 

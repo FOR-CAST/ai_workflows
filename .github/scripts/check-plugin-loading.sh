@@ -20,6 +20,29 @@ export CLAUDE_CONFIG_DIR
 trap 'rm -rf "$CLAUDE_CONFIG_DIR"' EXIT
 
 claude plugin marketplace add "$root" >/dev/null
+
+## A dependency in another marketplace resolves only if that marketplace is already
+## known: nothing auto-adds it. Without this, r-package-dev reports r-lib as not
+## installed and every bundle above it inherits the error.
+## `allowCrossMarketplaceDependenciesOn` names marketplaces, not sources, so the
+## source belongs here. A new entry there fails this check until it is listed.
+source_for() {
+  case "$1" in
+    posit-dev-skills) echo "posit-dev/skills" ;;
+    *) return 1 ;;
+  esac
+}
+while IFS= read -r m; do
+  [ -z "$m" ] && continue
+  if src="$(source_for "$m")"; then
+    claude plugin marketplace add "$src" >/dev/null
+  else
+    echo "No source known for cross-marketplace dependency marketplace '$m'." >&2
+    echo "Add it to source_for() in ${0##*/}." >&2
+    exit 1
+  fi
+done <<<"$(jq -r '.allowCrossMarketplaceDependenciesOn // [] | .[]' "$mkt_file")"
+
 expected="$(jq -r '.plugins[].name' "$mkt_file")"
 while IFS= read -r p; do
   claude plugin install "$p@$mkt" >/dev/null

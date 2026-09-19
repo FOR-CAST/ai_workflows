@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "r-bundle-spades",
+  "displayName": "SpaDES Simulation Project (bundle)",
+  "version": "0.1.0",
+  "description": "The r-bundle-research set plus r-spades, for a project that runs SpaDES modules from a targets pipeline. Ships no skills or hooks of its own. A project that also drives LANDIS-II adds r-bundle-landis alongside this one; the shared plugins resolve once.",
+  "author": {
+    "name": "Alex Chubaty",
+    "email": "achubaty@for-cast.ca"
+  },
+  "repository": "https://github.com/FOR-CAST/ai_workflows",
+  "license": "MIT",
+  "keywords": [
+    "r",
+    "bundle",
+    "spades",
+    "simulation",
+    "targets"
+  ],
+  "dependencies": [
+    "r-bundle-research",
+    "r-spades"
+  ]
+}
