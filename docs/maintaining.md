@@ -45,11 +45,24 @@ tree. Its terse labels are hand-written -- a `description` in a `SKILL.md` is tw
 four sentences, a cheatsheet entry is four to seven words -- so the document cannot
 generate itself. What it does instead is refuse to build when it is out of date.
 
-`cheatsheet/R/inventory.R` scans `plugins/` for every skill, subagent and hook
-registration; the document checks that set against its own labels and calls `stop()`
-on any difference. **Add a skill, hook or subagent and the render fails until it is
-on the sheet.** CI runs the render, so this fails the build rather than going
-unnoticed.
+`cheatsheet/R/inventory.R` scans `plugins/` for every skill, subagent, hook
+registration and bundle; the document checks that set against its own labels and
+calls `stop()` on any difference. **Add a skill, hook, subagent or bundle and the
+render fails until it is on the sheet.** CI runs the render, so this fails the build
+rather than going unnoticed.
+
+Three further assertions cover what the label list alone cannot:
+
+| Assertion | Fires when |
+| --- | --- |
+| `plugin_for` vs the scanned plugins | a content plugin is added or removed without a one-line blurb on the sheet |
+| `policy_effect` vs `docs/installation.md` | a policy key is documented there but not on the sheet |
+| `external_marketplaces` vs `allowCrossMarketplaceDependenciesOn` | this marketplace is allowed to depend on another one that the install panel never tells anyone to add |
+
+That last one matters because nothing auto-adds a marketplace: a dependency on
+`r-lib@posit-dev-skills` is only usable if the reader is told to add
+`posit-dev/skills` first, so the sheet refuses to build while it is silent about
+one.
 
 After changing a plugin:
 
@@ -66,14 +79,56 @@ Notes:
 
 - Needs `quarto` and R with `yaml`, `jsonlite` and `knitr`. Quarto bundles Typst, so
   **no TeX is needed**, on any machine or in CI.
+- `render.sh` pins `SOURCE_DATE_EPOCH`, so re-rendering an unchanged sheet produces
+  byte-identical output and leaves the working tree clean. Without it Typst stamps
+  the wall-clock time and every render looks like a change. The PDF's creation date
+  is therefore 1970; set `SOURCE_DATE_EPOCH` to stamp a real one.
 - Keep labels short. The sheet is two columns per side; anything past roughly 26
   characters wraps and the page loses its scannability.
+- A bundle ships no skills or hooks, so it is catalogued from its `dependencies`
+  instead, and its contents on the sheet are generated from them. Adding a bundle
+  needs only a label saying what kind of project it is for.
 - The sheet carries one accent colour and two status colours, and never lets colour
   alone carry meaning. Eight per-plugin hues were tried and rejected: shown together
   they fail colourblind separation, and a black-and-white print collapses them into
   one grey. A glyph or a named header always says what the colour says.
 - CI renders with fallback fonts, which changes line breaks. The committed PDF is
   the one rendered locally, where the intended fonts are present.
+
+### Why the sheet looks the way it does
+
+Recorded with the numbers, because conclusions alone get re-litigated and the
+measurements are what stop someone re-running the experiment.
+
+**One accent colour, not one per plugin.** Eight per-plugin hues were tried first.
+A cheatsheet shows every plugin at once, so the all-pairs test applies, and they fail
+it: worst colourblind separation dE 3.2 against a floor of 8, worst normal-vision
+dE 7.1 against a floor of 15. Greyscale is worse -- the three best candidates span
+relative luminance 0.162 to 0.216, so a black-and-white print, which is how a
+cheatsheet is usually read, collapses them into one grey. Hence one structural accent
+plus two status colours that never appear without a glyph, and plugin identity
+carried by name and position. Colour never carries meaning alone.
+
+**Inconsolata, not PT Mono.** PT Mono matches the body face's x-height exactly and
+comes from the same ParaType superfamily, which makes it the obvious pairing. It does
+not fit: at 6.60pt per character the longest name on the sheet,
+`spatial-objects-and-targets` at 27 characters, takes 178pt of a 269pt row and leaves
+too little for the description. Inconsolata's 5.50pt per character is what makes a
+single 25-skill panel possible.
+
+**Body 10pt with code at 1em.** Measured with Typst's own `measure()`: PT Sans
+Caption x-height 7.70pt at 11pt, Inconsolata 6.85pt, so the code face is 11% smaller
+at equal size before anything is set. Body 10pt with code at 1em is the largest pair
+that fits with usable slack (7.1pt), at 89% optical match. Body 11pt with code at 1em
+overflows the row by 19.1pt. Inline code inside prose is 1.1em instead, where nothing
+constrains width and 89% still reads as shrunken; that puts it at 98%.
+
+**Two columns per side, not three.** Three columns cannot hold a 27-character name
+and a description on one line, so nearly every entry wrapped.
+
+**0.55in bottom margin.** The colophon lives in the page margin. At 0.30in it landed
+0.09in from the paper edge, inside the unprintable margin of most printers; it now
+clears by 0.34in, measured on both pages with `pdftotext -bbox`.
 
 ## Versions and releases
 

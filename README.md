@@ -80,6 +80,10 @@ universally-safe guards stay active.
 
 ## Documentation
 
+- [**cheatsheet**](cheatsheet/ai-workflows-cheatsheet.pdf) -- the whole marketplace
+  on two printed sides: what each plugin is for, which to enable, when each skill
+  fires, what every hook blocks and what to do instead. It is a PDF, so the pages
+  below remain the accessible text equivalent
 - [docs/installation.md](docs/installation.md) -- what to enable where
 - [docs/hooks.md](docs/hooks.md) -- every hook, what it prevents, how to disable it
 - [docs/third-party.md](docs/third-party.md) -- third-party skills and plugins by workflow stage, and which to avoid
