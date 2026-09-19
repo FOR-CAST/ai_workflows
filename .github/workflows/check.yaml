@@ -110,6 +110,40 @@ jobs:
       - name: Validate every skill
         run: .github/scripts/check-skills.sh
 
+  cheatsheet:
+    name: Cheatsheet renders and covers every plugin
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # history, for the PDF freshness check
+          persist-credentials: false
+
+      - uses: r-lib/actions/setup-r@465b7d8e732ca3921382b1674c59bada9cbf3399 # v2
+        with:
+          use-public-rspm: true
+
+      - name: Install the packages the sheet is built from
+        run: Rscript -e 'install.packages(c("yaml", "jsonlite", "knitr"))'
+
+      - uses: quarto-dev/quarto-actions/setup@8a96df13519ee81fd526f2dfca5962811136661b # v2
+
+      # Quarto bundles Typst, so there is no TeX here. The runner lacks the sheet's
+      # preferred fonts and falls back to Noto; that changes line breaks, not whether
+      # the render succeeds, and the committed PDF is the one rendered locally.
+      - name: Render, which fails when a skill, hook or subagent has no entry
+        run: ./cheatsheet/render.sh
+
+      - name: Committed PDF freshness (warns, never fails)
+        run: .github/scripts/check-cheatsheet-fresh.sh
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: cheatsheet
+          path: cheatsheet/ai-workflows-cheatsheet.pdf
+          if-no-files-found: error
+
   release-tags:
     name: Tag plugin releases
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
