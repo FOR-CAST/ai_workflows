@@ -1,7 +1,7 @@
 ---
 name: quarto-reports
-description: Quarto report mechanics for research deliverables -- project-mode output paths and the stale-PDF trap, rendering as a pipeline target, ASCII and LaTeX backstops, references-before-appendices structure, reusable include fragments, draft marking for AI-assisted content, and deriving numbers from the pipeline instead of writing them.
-when_to_use: Writing or editing a .qmd or .Rmd report; wiring a render into a pipeline; a rendered PDF is missing, stale, or lands somewhere unexpected; adding numbers, tables or figures to a report; marking a draft.
+description: Quarto report mechanics for research deliverables -- project-mode output paths and the stale-PDF trap, rendering from code and in worker processes, ASCII and LaTeX backstops, references-before-appendices structure, reusable include fragments, draft marking for AI-assisted content, and deriving numbers from the project's own registries instead of writing them.
+when_to_use: Writing or editing a .qmd or .Rmd report; rendering a report from a script or a worker; a rendered PDF is missing, stale, or lands somewhere unexpected; adding numbers, tables or figures to a report; marking a draft.
 paths:
   - "**/*.qmd"
   - "**/*.Rmd"
@@ -39,7 +39,7 @@ Two failures followed from assuming the flat path:
 Rules:
 
 - **Never reconstruct the flat path.** Take the path the render actually reports
-  (`tar_quarto()` records the real one) and copy from there.
+  and copy from there.
 - **`file.copy()` only warns on failure.** Unchecked, a failed copy leaves the
   previously published PDF in place and still returns its path -- so the target
   succeeds while shipping the old deliverable. Check the return value and compare
@@ -47,19 +47,17 @@ Rules:
 - Committed deliverable PDFs live in a **sibling** directory (`reports/pdf/`),
   never on the render path.
 
-## Rendering from a pipeline
+## Rendering from code
 
-- **`deployment = "main"` for any target that writes a git-tracked path** --
-  a rendered PDF, a README, a generated `.bib`. A worker would otherwise write it
-  inside that worker's checkout, dirty the tree, and block the next `--ff-only`
-  sync.
-- **Crew workers do not inherit the shell `PATH`.** Resolve the Quarto binary
+- **Worker processes do not inherit the shell `PATH`.** Resolve the Quarto binary
   explicitly, or prepend its directory, before calling `quarto::quarto_render()`.
   The same applies to any external tool: an interactive IDE exposes it, a callr
   child or a worker does not.
 - **Two concurrent renders of one template in one directory clobber each other's
-  intermediates.** Render from a branch-unique copy when branching over scenarios.
-- A rendered report is a **file target**; the function returns the path.
+  intermediates.** Render each variant from its own copy of the template.
+- A function that renders a report returns the path it wrote.
+- A pipeline framework adds its own rules for render steps; for `{targets}`, see
+  `targets-project-setup` in `r-targets`.
 
 ## ASCII, with a LaTeX backstop
 
@@ -112,14 +110,14 @@ is generated and which file to edit instead.
 
 The recurring quality failure is prose and tables drifting from the artifacts they
 describe. The fix is structural: **generate report tables from the same registry
-the pipeline uses**, so the report cannot drift from the code.
+the code uses**, so the report cannot drift from the code.
 
 Quarto sets the working directory to the report's own folder, so walk up to the
-project root rather than assuming either location:
+project root -- to a file only the root has -- rather than assuming either location:
 
 ```r
 .root <- normalizePath(".")
-while (!file.exists(file.path(.root, "_targets.yaml")) && dirname(.root) != .root) {
+while (!file.exists(file.path(.root, "renv.lock")) && dirname(.root) != .root) {
   .root <- dirname(.root)
 }
 ```

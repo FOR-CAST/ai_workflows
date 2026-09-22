@@ -34,8 +34,8 @@ Review only the change you are given, plus whatever you must read to judge it.
    Is a reprojection happening before a crop when crop-then-project would do?
 5. **Alignment.** Are two rasters assumed to align without a dimension or extent
    assertion? Off-by-one grids align at the origin and are wrong everywhere else.
-6. **External pointers.** Does any target, saved object, or worker payload carry a
-   live `SpatRaster`/`SpatVector`? It must be `tar_terra_*` or `format = "file"`.
+6. **External pointers.** Does any stored value, saved object, or worker payload
+   carry a live `SpatRaster`/`SpatVector`? It must cross the boundary as a file path.
 7. **Units.** Is `units::drop_units()` called unguarded? Does an arithmetic result
    silently carry units into a comparison or an index?
 8. **Silent drops.** Non-recursive `list.files()`; a reclassification with no

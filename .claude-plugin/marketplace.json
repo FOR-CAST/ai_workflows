@@ -13,46 +13,56 @@
     {
       "name": "r-bundle-landis",
       "source": "./plugins/r-bundle-landis",
-      "description": "The r-bundle-research set plus r-landis-ii, for a project that writes LANDIS-II inputs and reads its outputs.",
+      "description": "The r-bundle-research set plus r-landis-ii, for a project that writes LANDIS-II inputs and reads its outputs. Add r-bundle-targets alongside when the runs are driven from a {targets} pipeline.",
       "category": "research-software",
       "keywords": [
         "r",
         "bundle",
         "landis-ii",
-        "simulation",
-        "targets"
+        "simulation"
       ]
     },
     {
       "name": "r-bundle-research",
       "source": "./plugins/r-bundle-research",
-      "description": "One entry that enables the plugins an R research project uses on every session: r-project-core, r-targets, r-geospatial, r-reporting, r-code-review and r-package-dev. Enabling it enables those; r-package-dev in turn pulls the r-lib skills it defers to.",
+      "description": "One entry that enables the plugins every R research project uses on every session: r-project-core, r-geospatial, r-reporting, r-code-review and r-package-dev. Enabling it enables those; r-package-dev in turn pulls the r-lib skills it defers to. It carries no framework: add r-bundle-targets for a {targets} pipeline, and r-bundle-spades or r-bundle-landis for a simulation project.",
       "category": "research-software",
       "keywords": [
         "r",
         "bundle",
         "research",
-        "targets",
         "reproducibility"
       ]
     },
     {
       "name": "r-bundle-spades",
       "source": "./plugins/r-bundle-spades",
-      "description": "The r-bundle-research set plus r-spades, for a project that runs SpaDES modules from a targets pipeline.",
+      "description": "The r-bundle-research set plus r-spades, for a project that develops or runs SpaDES modules. Add r-bundle-targets alongside when the modules run from a {targets} pipeline.",
       "category": "research-software",
       "keywords": [
         "r",
         "bundle",
         "spades",
-        "simulation",
-        "targets"
+        "simulation"
+      ]
+    },
+    {
+      "name": "r-bundle-targets",
+      "source": "./plugins/r-bundle-targets",
+      "description": "The r-bundle-research set plus r-targets, for a project built as a {targets} pipeline.",
+      "category": "research-software",
+      "keywords": [
+        "r",
+        "bundle",
+        "targets",
+        "pipeline",
+        "reproducibility"
       ]
     },
     {
       "name": "r-code-review",
       "source": "./plugins/r-code-review",
-      "description": "Read-only review subagents for the failure classes that research R code produces instead of errors: spatial correctness, pipeline invalidation, dependency declaration, and reproducibility. Plus the measure-against-an-independent-reference method these projects use to catch bugs that no test would have caught.",
+      "description": "Read-only review subagents for the failure classes that research R code produces instead of errors: spatial correctness, dependency declaration, and failed or suspiciously clean runs. Plus the measure-against-an-independent-reference method these projects use to catch bugs that no test would have caught.",
       "category": "research-software",
       "keywords": [
         "r",
@@ -73,8 +83,7 @@
         "terra",
         "sf",
         "raster",
-        "spatial",
-        "geotargets"
+        "spatial"
       ]
     },
     {
@@ -107,7 +116,7 @@
     {
       "name": "r-project-core",
       "source": "./plugins/r-project-core",
-      "description": "Baseline conventions and deterministic guardrails for R-based research projects: air formatting, ASCII-only code and reports, citation integrity, the .Rprofile/_local.R/_hosts.R config split, commit discipline, and PreToolUse guards against destructive commands, hand-editing generated files, and mutating the library while a long run is live.",
+      "description": "Baseline conventions and deterministic guardrails for R-based research projects: fixing defects at their root cause, air formatting, ASCII-only code and reports, citation integrity, the .Rprofile/_local.R/_hosts.R config split, hermetic tests and CI for projects that are not packages, long runs on shared machines, commit discipline, and PreToolUse guards against destructive commands, hand-editing generated files, and mutating the library while a long run is live.",
       "category": "research-software",
       "keywords": [
         "r",
@@ -146,14 +155,15 @@
     {
       "name": "r-targets",
       "source": "./plugins/r-targets",
-      "description": "Building, testing, debugging and running {targets} pipelines: a tested static validator and hermetic test suite with GitHub Actions CI for projects that are not R packages, multi-project stores and the definition-time vs run-time contract, crew and cluster runs that survive memory kills, and the silent-staleness traps that make pipelines report clean runs while producing wrong answers.",
+      "description": "Building, testing, debugging and running {targets} pipelines: a tested static validator on top of the general test suite and CI, multi-project stores and the definition-time vs run-time contract, spatial objects and geotargets in the store, launching and stopping runs on shared machines with crew controllers sized to fit, a pipeline-invalidation review agent, and the silent-staleness traps that make pipelines report clean runs while producing wrong answers.",
       "category": "research-software",
       "keywords": [
         "r",
         "targets",
         "pipeline",
         "crew",
-        "reproducibility"
+        "reproducibility",
+        "geotargets"
       ]
     }
   ],

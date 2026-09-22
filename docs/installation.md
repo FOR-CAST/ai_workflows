@@ -42,12 +42,15 @@ instead of six.
 
 | Bundle | Pulls in |
 | --- | --- |
-| `r-bundle-research` | `r-project-core`, `r-targets`, `r-geospatial`, `r-reporting`, `r-code-review`, `r-package-dev` (and r-lib through it) |
+| `r-bundle-research` | `r-project-core`, `r-geospatial`, `r-reporting`, `r-code-review`, `r-package-dev` (and r-lib through it) |
+| `r-bundle-targets` | `r-bundle-research` plus `r-targets` |
 | `r-bundle-spades` | `r-bundle-research` plus `r-spades` |
 | `r-bundle-landis` | `r-bundle-research` plus `r-landis-ii` |
 
-A project that runs SpaDES modules *and* drives LANDIS-II enables both simulation
-bundles; the shared plugins resolve once. Together they cost roughly 5.5k tokens
+`r-bundle-research` carries no framework. Add the bundle for each framework the
+project actually uses: a SpaDES project run from a `{targets}` pipeline enables
+`r-bundle-spades` *and* `r-bundle-targets`, and a project that also drives LANDIS-II
+adds `r-bundle-landis`. The shared plugins resolve once. Together they cost roughly 5.5k tokens
 of always-on context.
 
 ### Individual plugins, for a narrower set
@@ -60,9 +63,10 @@ uses -- every enabled plugin costs context on every turn (`claude plugin details
 | --- | --- |
 | R package | `r-project-core`, `r-package-dev`, `r-code-review` |
 | `{targets}` pipeline | `r-project-core`, `r-targets`, `r-code-review` |
-| Spatial / GIS analysis | `r-project-core`, `r-geospatial`, `r-targets` |
-| SpaDES simulation project | `r-project-core`, `r-spades`, `r-targets`, `r-geospatial` |
-| LANDIS-II driven project | the above, plus `r-landis-ii` |
+| Spatial / GIS analysis | `r-project-core`, `r-geospatial` |
+| SpaDES simulation project | `r-project-core`, `r-spades`, `r-geospatial` |
+| LANDIS-II driven project | `r-project-core`, `r-landis-ii`, `r-geospatial` |
+| Anything run as a `{targets}` pipeline | add `r-targets` |
 | Anything producing reports | add `r-reporting` |
 
 ## Per-project settings
@@ -80,7 +84,8 @@ Add to the project's `.claude/settings.json` so collaborators get the same setup
     }
   },
   "enabledPlugins": {
-    "r-bundle-spades@ai-workflows": true
+    "r-bundle-spades@ai-workflows": true,
+    "r-bundle-targets@ai-workflows": true
   }
 }
 ```

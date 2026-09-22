@@ -34,6 +34,13 @@ teardown() {
   echo "$output" | grep -q "^$FAKE_RUN_PID .*sleep 3002"
 }
 
+@test "states the root-cause rule and names the skill that carries it" {
+  run "$G" </dev/null
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q 'root-cause-fixes'
+  echo "$output" | grep -q 'file:line'
+}
+
 @test "does not abort when USER is unset" {
   run env -u USER "$G" </dev/null
   [ "$status" -eq 0 ]

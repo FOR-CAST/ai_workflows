@@ -1,7 +1,7 @@
 ---
 name: spades-caching
 description: Eight years of accumulated SpaDES Cache() lessons and the conclusion they reached -- when a pipeline framework owns caching, disable reproducible's cache entirely rather than layering two caches. Covers cache scoping, what must never reach a cache key, and the option firewall.
-when_to_use: Deciding whether to Cache() something in a SpaDES module or pipeline; a simulation re-runs when it should not, or does not re-run when it should; cache collisions between study areas or machines; setting reproducible.useCache or .useCache module parameters.
+when_to_use: Deciding whether to Cache() something in a SpaDES module or pipeline; a simulation re-runs when it should not, or does not re-run when it should; cache collisions between study areas or machines; setting reproducible.useCache or .useCache module parameters; editing the arguments of a tar_simspades() or similar simulation target in a targets pipeline.
 ---
 
 # Caching in SpaDES
@@ -37,6 +37,28 @@ That firewall carries its own maintenance note, which is the right instinct:
 *"Audited against SpaDES.core 3.1.2.9016 / reproducible 3.1.1.9062; audit it again
 on each dev bump."* An option firewall is only valid against the versions it was
 audited against.
+
+## Simulations run from a targets pipeline
+
+When the pipeline is `targets`, a simulation stage is usually one target built by a
+factory such as `tar_simspades()`:
+
+- **Every factory argument is part of the command hash.** `tar_simspades()`
+  `bquote()`s its arguments in at definition time, so a cosmetic edit to an argument
+  block invalidates the simulation. One project records the cost:
+
+  > `local_workers` toggling 8 -> 1 -> 8 and the 9014 -> 9015 `mem_workers`/`mem_frac`
+  > command-shape change kept invalidating the baked command hash
+
+  -- for a stage whose rebuild is 22 hours. Keep runtime resource knobs out of the
+  factory call, and check the rebuild cost before editing an argument block.
+- **A variant that must not invalidate the main run gets a copied spec, not a shared
+  one.** One project keeps a gated experimental variant deliberately *not* derived
+  from its main simulation spec, so editing the variant can never invalidate the
+  22-hour main run. Do not "deduplicate" it.
+- **Register the factory with tarborist** so the IDE can see the targets, in
+  `.vscode/settings.json`: `"tarborist.additionalSingleTargetFactories":
+  ["tar_simspades"]`.
 
 ## If you are caching anyway, the accumulated lessons
 

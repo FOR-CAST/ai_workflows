@@ -18,7 +18,7 @@ a control node.
 | Hook behaviour | `bats tests/hooks` | every guard's decisions, plus a portability lint and shellcheck. CI runs it on Ubuntu **and** macOS |
 | Cheatsheet | `./cheatsheet/render.sh` | a skill, hook or subagent with no entry on the printed sheet, and an entry left behind after one is removed. The render aborts and names the id |
 | Skills | `.github/scripts/check-skills.sh` | skill structure, frontmatter, links and token budgets ([skill-validator](https://github.com/agent-ecosystem/skill-validator)) |
-| Workflows | `actionlint` and `zizmor --persona=regular`, over `.github/workflows` **and** the CI template the `targets-testing-ci` skill ships | workflow syntax and shell bugs; credentials left in `.git/config`, unpinned actions, injectable expressions |
+| Workflows | `actionlint` and `zizmor --persona=regular`, over `.github/workflows` **and** the CI template the `project-tests-ci` skill ships | workflow syntax and shell bugs; credentials left in `.git/config`, unpinned actions, injectable expressions |
 
 Tools: `claude`, `jq`, [bats-core](https://github.com/bats-core/bats-core),
 `shellcheck` (optional; its test is skipped without it), and `skill-validator`.
@@ -114,10 +114,10 @@ carried by name and position. Colour never carries meaning alone.
 
 **Inconsolata, not PT Mono.** PT Mono matches the body face's x-height exactly and
 comes from the same ParaType superfamily, which makes it the obvious pairing. It does
-not fit: at 6.60pt per character the longest name on the sheet,
-`spatial-objects-and-targets` at 27 characters, takes 178pt of a 269pt row and leaves
-too little for the description. Inconsolata's 5.50pt per character is what makes a
-single 25-skill panel possible.
+not fit: at 6.60pt per character the longest skill name on the sheet when this was
+measured, at 27 characters, took 178pt of a 269pt row and left too little for the
+description. Inconsolata's 5.50pt per character is what makes a single skill panel
+possible.
 
 **Body 10pt with code at 1em.** Measured with Typst's own `measure()`: PT Sans
 Caption x-height 7.70pt at 11pt, Inconsolata 6.85pt, so the code face is 11% smaller
@@ -138,7 +138,7 @@ clears by 0.34in, measured on both pages with `pdftotext -bbox`.
 Our own workflows pin every action to a SHA, and Dependabot
 ([`.github/dependabot.yml`](../.github/dependabot.yml)) keeps those current.
 
-The CI template under `targets-testing-ci/assets/check.yaml` pins by major tag
+The CI template under `project-tests-ci/assets/check.yaml` pins by major tag
 instead, and that is deliberate: it is copied into other repositories, where nothing
 bumps it. A SHA pinned there would rot, and the copier would inherit a year-old
 action; a major tag keeps itself current. The template tells the copier to pin to
@@ -155,8 +155,10 @@ uses the `plugin.json` value when both files set one, silently, so a second copy
 Users receive a change only when that version moves. So:
 
 1. Change a plugin; bump its `version` in the same branch (patch for fixes, minor
-   for new skills or hooks, major for anything that removes or renames). CI fails a
-   change without a bump once the previous version has been released.
+   for new skills or hooks, major for anything that removes or renames). While a
+   plugin is at 0.x, a removal or rename is a minor bump, as semver treats a 0.x minor
+   as breaking. CI fails a change without a bump once the previous version has been
+   released.
 2. Merge to `main`.
 3. After CI passes on `main`, the `release-tags` job runs
    `.github/scripts/tag-releases.sh`, which calls `claude plugin tag --push` for every

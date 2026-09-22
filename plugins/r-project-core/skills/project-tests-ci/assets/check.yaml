@@ -1,4 +1,4 @@
-## Tests and static pipeline validation for a {targets} + renv project that is not an R package.
+## Tests for an R + renv project that is not an R package.
 ## Copy to .github/workflows/check.yaml and adjust the lines marked ADJUST.
 ##
 ## Before relying on it: trigger it once with workflow_dispatch on your working branch and record
@@ -59,7 +59,7 @@ jobs:
         run: pipx run --spec cffconvert==2.0.0 cffconvert --validate
 
   tests:
-    name: tests and pipeline validation
+    name: tests
     runs-on: ubuntu-24.04
     timeout-minutes: 180               # ADJUST: from a measured first run, plus margin
     env:
@@ -69,7 +69,7 @@ jobs:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       NOT_CRAN: "true"                 # expect_snapshot() runs; arrow source builds get libarrow
       TESTTHAT_EDITION: "3"
-      PIPELINE_AS_CI: "true"           # ADJUST: the project's own switch for the CI graph, if any
+      PROJECT_CI: "true"               # ADJUST: the project's own switch for a CI configuration, if any
     steps:
       - uses: actions/checkout@v7      # no `submodules:` -- packages restore from renv.lock
         with:
@@ -89,10 +89,6 @@ jobs:
         run: |
           Rscript -e 'install.packages(c("pak", "jsonlite"), repos = Sys.getenv("RSPM", "https://cloud.r-project.org"))'
           Rscript "$GITHUB_WORKSPACE/scripts/ci-sysreqs.R" "$GITHUB_WORKSPACE/renv.lock"
-
-      ## Needed whenever the pipeline uses tarchetypes::tar_quarto(): it runs `quarto inspect` at
-      ## pipeline DEFINITION time, so tar_source() and the validator fail without it.
-      - uses: quarto-dev/quarto-actions/setup@v2     # ADJUST: remove if no tar_quarto()
 
       ## setup-renv caches for you; do not add actions/cache. bypass-cache "never" saves the
       ## package cache even when a later step fails or the run is cancelled -- the default saves
@@ -114,18 +110,14 @@ jobs:
       - name: Tests
         run: Rscript scripts/run-tests.R
 
-      - name: Validate every targets project and variant
-        run: Rscript scripts/validate-projects.R
+      ## ADJUST: project-specific checks go here, before the guard below.
 
       ## `git status` cannot see gitignored paths, which is exactly where a test that touched real
       ## data would write. Assert they do not exist, and that renv did not rewrite activate.R.
-      - name: Tests and validation left the checkout untouched
+      - name: Tests left the checkout untouched
         run: |
           git status --porcelain
           test -z "$(git status --porcelain)"
           for p in inputs outputs data cache; do          # ADJUST: the project's data paths
-            if [ -e "$p" ]; then echo "tests or validation created $p/"; exit 1; fi
+            if [ -e "$p" ]; then echo "tests created $p/"; exit 1; fi
           done
-          if find . -maxdepth 1 -type d -name '_targets*' | grep -q .; then
-            echo "tests or validation created a targets store"; exit 1
-          fi

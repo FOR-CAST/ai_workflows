@@ -1,7 +1,7 @@
 version: 2
 updates:
   ## Keeps the SHA pins in .github/workflows current. It does not reach the CI
-  ## template that targets-testing-ci ships, which is why that file pins by tag.
+  ## template that project-tests-ci ships, which is why that file pins by tag.
   - package-ecosystem: github-actions
     directory: /
     schedule:

@@ -32,7 +32,7 @@ How they were actually caught: file mtimes rather than the run summary, and
 validation numbers coming back *identical to the decimal* across a change that
 should have moved them.
 
--> `r-targets:targets-staleness`, `pipeline-invalidation-auditor`
+-> `r-targets:targets-staleness`, `r-targets` agent `pipeline-invalidation-auditor`
 
 ## 1b. Targets that "built" without ever resolving their inputs
 
@@ -43,7 +43,7 @@ argument. Found independently in three projects; one survived for months. A stat
 over every project and every configuration variant catches it, along with helpers missing
 from a partial `tar_source()` list and `pattern =` over non-targets.
 
--> `r-targets:targets-testing-ci`
+-> `r-targets:targets-testing-ci`, on top of `r-project-core:project-tests-ci`
 
 ## 2. Dependency and version drift -- the largest ongoing cost
 
@@ -69,13 +69,14 @@ the offenders are always base-adjacent: `stats::setNames`, `utils::head`,
 
 `SpatRaster`/`SpatVector` hold data behind an external pointer. A plain
 `tar_target` stores the dead pointer **without complaint**; the failure surfaces in
-the *consumer*, minutes later, as `NULL value passed as symbol address`.
+the *consumer*, minutes later, as `NULL value passed as symbol address`. The same
+happens with any worker, cache or saved `.rds`.
 
-The design fix is not `wrap()`/`unwrap()` -- it is to make files the currency:
-`geotargets::tar_terra_*` or `format = "file"`, passing filenames across every
-boundary.
+The design fix is not `wrap()`/`unwrap()` -- it is to make files the currency, passing
+filenames across every boundary (in a pipeline, `geotargets::tar_terra_*` or
+`format = "file"`).
 
--> `r-geospatial:spatial-objects-and-targets`
+-> `r-geospatial:spatial-io-and-crs`, `r-targets:targets-spatial`
 
 ## 4. Geometry operations that silently drop data
 
@@ -146,7 +147,7 @@ wrong. A `Sys.setenv()` in the wrong file is a silent no-op on the worker.
 Related: crew workers do not inherit the shell `PATH`, so an external binary found
 in the IDE is missing on a worker.
 
--> `r-project-core:project-config-layout`
+-> `r-project-core:project-config-layout`, `r-targets:targets-project-setup`
 
 ## 9. Shared-machine hazards
 
@@ -164,7 +165,7 @@ repeatedly and in capitals:
 - **Installing or syncing while a run is live** swaps the library under active
   workers.
 
--> `r-project-core` hooks: `guard-process-ownership`, `guard-staging`,
+-> `r-project-core:hpc-cluster-runs`; `r-project-core` hooks: `guard-process-ownership`, `guard-staging`,
 `guard-long-run-interlock`, `guard-policy`, `session-context`
 
 ## 10. Mechanical friction that is pure waste
@@ -231,4 +232,5 @@ The project's own response is the right one and is worth copying: **record the
 falsified reasoning and its measurement inline next to the setting**, so the dead
 end is not retried -- including for false alarms, so those are not re-raised either.
 
--> `r-code-review:verification-method`, `r-project-core:design-log`
+-> `r-project-core:root-cause-fixes`, `r-code-review:verification-method`,
+`r-project-core:design-log`

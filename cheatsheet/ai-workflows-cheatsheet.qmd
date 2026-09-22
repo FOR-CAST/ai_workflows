@@ -38,7 +38,7 @@ labels <- list(
   ## -- skills ------------------------------------------------------------
   "r-code-review/skill/verification-method" = "before you claim it works",
   "r-geospatial/skill/raster-scale-and-memory" = "raster too big for RAM",
-  "r-geospatial/skill/spatial-objects-and-targets" = "pointers do not serialise",
+  "r-geospatial/skill/spatial-io-and-crs" = "pointers do not serialise",
   "r-geospatial/skill/vector-geometry-hygiene" = "empty polygons, slivers",
   "r-landis-ii/skill/landis-inputs" = "before a LANDIS run",
   "r-landis-ii/skill/landis-outputs" = "reading a LANDIS map",
@@ -49,27 +49,32 @@ labels <- list(
   "r-project-core/skill/commit" = "write the commit",
   "r-project-core/skill/design-log" = "work spanning sessions",
   "r-project-core/skill/project-config-layout" = "a setting missed a worker",
+  "r-project-core/skill/hpc-cluster-runs" = "launch or stop a long run",
   "r-project-core/skill/project-policy" = "a guard fires wrongly",
+  "r-project-core/skill/project-tests-ci" = "tests and CI, no package",
   "r-project-core/skill/r-style" = "writing or editing any R",
+  "r-project-core/skill/root-cause-fixes" = "before any fix",
   "r-reporting/skill/provenance-receipts" = "where data came from",
   "r-reporting/skill/quarto-reports" = "a render landed oddly",
   "r-reporting/skill/report-writing" = "prose someone else reads",
   "r-spades/skill/module-contract" = "wiring a SpaDES module",
   "r-spades/skill/spades-caching" = "re-runs it should not",
-  "r-targets/skill/hpc-cluster-runs" = "launch or stop a long run",
+  "r-targets/skill/targets-cluster-runs" = "tar_make on shared nodes",
   "r-targets/skill/targets-debugging" = "a target failed or hung",
   "r-targets/skill/targets-project-setup" = "structuring _targets.R",
+  "r-targets/skill/targets-spatial" = "terra objects as targets",
   "r-targets/skill/targets-staleness" = "up to date, but is not",
-  "r-targets/skill/targets-testing-ci" = "tests and CI for pipelines",
+  "r-targets/skill/targets-testing-ci" = "validator, targets CI",
   ## -- bundles ----------------------------------------------------------
   "r-bundle-research/bundle" = "an R research project",
   "r-bundle-spades/bundle" = "research, plus SpaDES",
   "r-bundle-landis/bundle" = "research, plus LANDIS-II",
+  "r-bundle-targets/bundle" = "research, plus targets",
   ## -- review subagents --------------------------------------------------
   "r-code-review/agent/dependency-auditor" = "an undeclared symbol",
-  "r-code-review/agent/pipeline-invalidation-auditor" = "silently stale targets",
   "r-code-review/agent/run-forensics" = "a failed or odd run",
   "r-code-review/agent/spatial-correctness-reviewer" = "CRS and geometry bugs",
+  "r-targets/agent/pipeline-invalidation-auditor" = "silently stale targets",
   ## -- hooks -------------------------------------------------------------
   "r-package-dev/hook/check-doc-sync.sh" = "roxygen ahead of man/",
   "r-package-dev/hook/guard-news-dev-heading.sh" = "a numbered NEWS heading",
@@ -105,7 +110,7 @@ plugin_for <- c(
 by_project <- list(
   "R package" = "core, package-dev, code-review",
   "{targets} pipeline" = "core, targets, code-review",
-  "Spatial / GIS" = "core, geospatial, targets",
+  "Spatial / GIS" = "core, geospatial",
   "produces reports" = "add reporting"
 )
 
@@ -151,6 +156,7 @@ kinds <- list(
 session_report <- c(
   "the host, and whether it is a controller",
   "the project policy that loaded, if any",
+  "the rule: fix the root cause, at file:line",
   "long runs already going, marked as not yours",
   "running containers and detached screens",
   "the branch, and changes that predate the session",
@@ -319,7 +325,7 @@ col_a <- c(
     )
   }, character(1L)), collapse = ", "), ")"),
   "]",
-  "#panel(\"bundles: enable one per project\", count: \"3\")[",
+  paste0("#panel(\"bundles: research, plus one per framework\", count: \"", n_bundle, "\")["),
   panel_body(bundle_cells()),
   "]",
   "#panel(\"or enable plugins directly\")[",
@@ -332,18 +338,16 @@ col_a <- c(
     paste0("#codeline(", typ_str(paste0("/plugin marketplace add ", repo)), ")")
   })),
   paste0("#notepara[#emph[Nothing auto-adds another marketplace.] r-package-dev depends ",
-         "on #raw(\"r-lib@posit-dev-skills\"), so add both before installing anything; ",
-         "either order works. Skip the posit one and r-package-dev reports r-lib as not ",
-         "installed, while every bundle above it reports the dependency disabled.]"),
+         "on #raw(\"r-lib@posit-dev-skills\"): add both first, in either order, or it ",
+         "and every bundle above it report the dependency missing.]"),
   "#subhead(\"2. enable a bundle, then set policy\")",
   "#codeline(\"/plugin install r-bundle-research@ai-workflows\")",
   "#codeline(\"/r-project-core:project-policy\")",
   "#subhead(\"3. share the setup with the project\")",
   paste0("#notepara[#raw(\".claude/settings.json\") carries #raw(\"extraKnownMarketplaces\") ",
-         "and #raw(\"enabledPlugins\"). Declare the posit marketplace there too, though ",
-         "nothing here enables a plugin from it: that is what lets the dependency ",
-         "resolve. The #raw(\"claude plugin\") CLI does not read project settings, so ",
-         "install from inside a session, once the folder is trusted.]"),
+         "and #raw(\"enabledPlugins\"); declare the posit marketplace there too, so the ",
+         "dependency resolves. The #raw(\"claude plugin\") CLI does not read project ",
+         "settings: install from a session, once the folder is trusted.]"),
   "]",
   "#panel(\"uninstall, or just turn it off\")[",
   "#subhead(\"stop it, remove it, or forget the source\")",
@@ -369,7 +373,7 @@ col_b <- c(
   paste0("#panel(\"skills: when to reach for them\", count: \"", n_skill, "\")["),
   panel_body(unlist(lapply(skill_order, skill_cells))),
   "]",
-  "#panel(\"review subagents\", count: \"4, read-only\")[",
+  paste0("#panel(\"review subagents\", count: \"", n_agent, ", read-only\")["),
   panel_body(vapply(
     inv$id[inv$kind == "agent"],
     function(id) {

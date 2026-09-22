@@ -40,6 +40,14 @@ else
   echo "Run /r-project-core:project-policy to create one."
 fi
 
+# --- how defects get fixed --------------------------------------------------
+# A workaround at the call site leaves the defect for the next caller. The rule is
+# stated here, every session, because it is broken mid-task, before any skill loads.
+echo
+echo "Fixing a defect: name the root cause as file:line before proposing a fix, and fix it"
+echo "where it lives -- in the package, with a regression test, not in the calling script."
+echo "A second workaround for one symptom means stop and find the cause (skill: root-cause-fixes)."
+
 # --- long-running work that is NOT ours -------------------------------------
 pats="$(policy_list '.longRunPatterns' | paste -sd'|' -)"
 [ -z "$pats" ] && pats='tar_make|DEoptim|spades|landis|Omniscape|julia'

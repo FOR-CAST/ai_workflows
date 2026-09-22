@@ -45,6 +45,6 @@ Before signalling anything:
 If the process is NOT yours: report it to the user and stop. Do not signal it,
 even if it appears stuck or is blocking your work.
 
-Note also that ending a screen does NOT stop a targets run -- the callr child
-survives it and keeps holding the store lock. See the targets-debugging skill for
-the correct ordered shutdown."
+Note also that ending a screen does NOT stop a run whose child R processes (callr,
+workers) survive it and keep their locks. See the hpc-cluster-runs skill for the
+correct ordered shutdown."

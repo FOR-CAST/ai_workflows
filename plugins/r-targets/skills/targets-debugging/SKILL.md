@@ -1,6 +1,6 @@
 ---
 name: targets-debugging
-description: Debug and inspect a {targets} pipeline -- the tar_outdated/tar_visnetwork/tar_workspace ladder, running in-process for browser(), reading errors from tar_meta rather than the console, and the symptom-to-cause catalogue for crew, callr, Docker and NFS failures.
+description: Debug and inspect a {targets} pipeline -- the tar_outdated/tar_visnetwork/tar_workspace ladder, running in-process for browser(), reading errors from tar_meta rather than the console, forcing a rebuild, and the symptom-to-cause catalogue for targets, crew and callr failures.
 when_to_use: A target failed, a run behaved oddly, results look stale or suspiciously fast, asked to inspect a pipeline's state, or debugging inside a target with browser().
 argument-hint: "[optional: target name or symptom]"
 ---
@@ -69,33 +69,21 @@ the one you mean."*
 | run finished far too fast; numbers identical to the decimal | silent staleness -- see `targets-staleness` |
 | clean console, wrong results | `error = "continue"`; check `tar_meta(fields = "error")` |
 | `NULL value passed as symbol address`, in the *consumer* not the producer | a terra/sf external pointer stored by a plain `tar_target`; use `tar_terra_*` or `format = "file"` |
-| store lock held after you killed the run | `tar_make()` wraps the pipeline in a `callr` child that does **not** die with the screen; kill it, then `targets::tar_unblock_process(store = "_targets")` |
+| store lock held after you killed the run | `tar_make()` wraps the pipeline in a `callr` child that does **not** die with the screen; see `targets-cluster-runs` |
 | `crashed N consecutive times` | raise `crashes_max` on the controller (a race under high worker counts) |
 | worker cannot find a function that exists locally | the worker library differs; check node sync and that the package is in `tar_option_set(packages = )` |
-| a setting "did not take" on a worker | it was set in `_local.R`; workers do not source it -- see `project-config-layout` |
+| a setting "did not take" on a worker | it was set in `_local.R`; workers do not source it -- see `targets-project-setup` |
 | target rebuilds every run, apparently without cause | a non-reproducible file write (GDAL timestamps), or an intentional `cue = tar_cue(mode = "always")` on a provenance target |
-| Docker exit 126 | root-squashed NFS bind mount -- stage on local scratch |
-| Docker exit 137 / 139 | OOM / transient SIGSEGV |
 
-## Stopping a long run cleanly (order matters)
+## Stopping a run
 
-If the run was launched as a systemd unit, `systemctl --user stop <unit>` signals
-the whole cgroup, including the `callr` child; skip to step 4. Otherwise:
-`tar_make()` runs inside a `callr` child that does not receive SIGHUP, so ending the
-screen does **not** stop it -- it keeps holding the store lock.
+The stop order that actually ends a run, and clears the store lock, is in
+`targets-cluster-runs`: ending a `screen` does not stop `tar_make()`, because its
+`callr` child survives.
 
-```sh
-## 1. kill any retry loop first, or it treats the dead R process as a crash and relaunches
-## 2. end the screen (the callr child survives this)
-screen -X -S <name> quit
-## 3. find and kill the surviving callr child
-ps -u "$USER" -o pid,etime,cmd | grep -E 'callr|exec/R' | grep -v grep
-kill -TERM <pid>
-## 4. clear the store lock
-Rscript -e 'targets::tar_unblock_process(store = "_targets")'
-## 5. reap containers on EVERY compute host -- neither SSH nor crew reaps a worker's
-##    Docker children, and orphaned PSOCK workers RESTART their containers, so kill
-##    the workers before the containers or `docker stop` is whack-a-mole
-```
+## Fixing what you find
 
-**Never touch processes you did not start.** These are shared nodes.
+Name the defect's `file:line` before changing anything, and fix it where it lives. A
+guard added to a target's command to route around a bug in a helper or a package
+leaves the bug for the next target that calls it -- see `root-cause-fixes` in
+`r-project-core`.

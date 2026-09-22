@@ -2,8 +2,8 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "r-bundle-research",
   "displayName": "R Research Project (bundle)",
-  "version": "0.1.0",
-  "description": "One entry that enables the plugins an R research project uses on every session: r-project-core, r-targets, r-geospatial, r-reporting, r-code-review and r-package-dev. It ships no skills or hooks of its own -- enabling it enables those, and r-package-dev in turn pulls the r-lib skills it defers to. Add r-bundle-spades or r-bundle-landis instead if the project simulates.",
+  "version": "0.2.0",
+  "description": "One entry that enables the plugins every R research project uses on every session: r-project-core, r-geospatial, r-reporting, r-code-review and r-package-dev. Enabling it enables those; r-package-dev in turn pulls the r-lib skills it defers to. It carries no framework: add r-bundle-targets for a {targets} pipeline, and r-bundle-spades or r-bundle-landis for a simulation project. It ships no skills or hooks of its own.",
   "author": {
     "name": "Alex Chubaty",
     "email": "achubaty@for-cast.ca"
@@ -14,12 +14,10 @@
     "r",
     "bundle",
     "research",
-    "targets",
     "reproducibility"
   ],
   "dependencies": [
     "r-project-core",
-    "r-targets",
     "r-geospatial",
     "r-reporting",
     "r-code-review",

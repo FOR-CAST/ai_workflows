@@ -1,11 +1,10 @@
 ---
 name: hpc-cluster-runs
-description: "Running long pipelines and heavy work on shared machines and clusters: what counts as heavy on a control node (including package tests, checks, source builds and data probes), launching runs that survive IDE memory kills (systemd-run, not screen or nohup), the ordered shutdown that actually stops a targets run, keeping worker checkouts in sync, and never touching a process you did not start."
-when_to_use: Launching a long or multi-day run; stopping one; syncing code or packages across cluster nodes; a run is stuck or orphaned; deciding where to execute something on a shared machine; configuring crew or crew.ssh controllers.
+description: "Running long jobs and heavy work on shared machines and clusters: what counts as heavy on a control node (including package tests, checks, source builds and data probes), launching runs that survive IDE memory kills (systemd-run, not screen or nohup), stopping a run and reaping what it leaves behind, keeping node checkouts in sync, sizing parallel workers against memory, and never touching a process you did not start."
+when_to_use: Launching a long or multi-day run; stopping one; syncing code or packages across cluster nodes; a run is stuck or orphaned; deciding where to execute something on a shared machine; sizing parallel workers for a node.
 paths:
   - "**/_hosts.R"
   - "**/_hosts.R.example"
-  - "**/_targets.R"
   - "**/scripts/**"
 ---
 
@@ -21,8 +20,8 @@ inside it.
 
 "Heavy" is broader than it looks. Each of these has taken a control node down:
 
-- `tar_make()` on anything but light orchestration, renders (`quarto render`,
-  `rmarkdown::render`), `tar_make(callr_function = NULL)` on a real target;
+- running a pipeline, a simulation or a model engine on real inputs, and renders
+  (`quarto render`, `rmarkdown::render`);
 - **package work**: `devtools::test()`, `devtools::check()`, `R CMD check`, source
   builds from `renv::install` or `pak`;
 - **data probing**: an unfiltered `sf::st_read()` of a multi-GB layer, `fread()` of a
@@ -32,9 +31,9 @@ inside it.
   (`terra::densify(..., flat = FALSE)` on lon/lat reads the interval in metres)
   built 30 million vertices and peaked at 27 GB.
 
-Light orchestration is fine on the control node: git, `tar_progress()`,
-`tar_manifest()`, `tar_meta()`, `tar_outdated()`, `tar_validate()`, `tar_read()` of
-small objects, and the node-sync script. When in doubt, it is heavy.
+Light orchestration is fine on the control node: git, status queries against a
+pipeline's metadata, reading small results, and the node-sync script. When in doubt,
+it is heavy.
 
 **Preflight before the first heavy thing in a session:**
 
@@ -50,8 +49,8 @@ Detect the role by capability, not by hostname string:
 if (file.exists("_hosts.R")) { ... }   ## robust to the cluster being renamed
 ```
 
-Set `controllerHosts` in `.claude/r-project-policy.json` and the guard in
-`r-project-core` will refuse heavy commands there.
+Set `controllerHosts` in `.claude/r-project-policy.json` and the guard in this
+plugin will refuse heavy commands there.
 
 **Dispatch instead.** Home directories are often local per node, so a compute node
 has its own clone: bring it up to date, or stage the working tree on shared storage,
@@ -107,7 +106,7 @@ running when your session began, precisely so you can tell the difference.
 ## Launching a long run
 
 ```sh
-pgrep -af "tar_make|DEoptim"          ## preflight: is anything already running?
+pgrep -af "<the project's long-run patterns>"   ## preflight: is anything already running?
 systemd-run --user --unit=<name> --collect \
   --working-directory="$PWD" bash _tmp/run_<name>.sh
 systemctl --user status <name>
@@ -118,13 +117,10 @@ The wrapper frames the run so the log is self-describing:
 
 ```bash
 { echo "=== <name> launch $(date -Is) ==="
-  Rscript-4.6.1 -e 'targets::tar_make(callr_function = NULL)'
+  Rscript-4.6.1 scripts/run_<name>.R
   echo "=== EXIT=$? $(date -Is) ==="
 } > "$LOG" 2>&1
 ```
-
-`callr_function = NULL` because the outer callr wrapper crashes under heavy
-optimiser and container load.
 
 Use `screen` only when you need to attach interactively, and launch the screen
 itself through `systemd-run --user` if the run must survive memory pressure.
@@ -132,38 +128,35 @@ itself through `systemd-run --user` if the run must survive memory pressure.
 **Rename the log with a failure suffix when a run dies** -- it makes the failure
 mode greppable months later: `.died_79of80`, `.oom-9gib`, `.gen5_prereboot`.
 
-## Stopping a run -- order matters
+## Stopping a run
 
 **Launched as a systemd unit:** `systemctl --user stop <name>` signals every process
-in the unit's cgroup, including the `callr` child. Then confirm nothing survived and
-clear the lock if it remains:
+in the unit's cgroup, including child R processes. Confirm nothing survived:
 
 ```sh
-ps -u "$USER" -o pid,etime,cmd | grep -E 'callr|exec/R' | grep -v grep
-Rscript-4.6.1 -e 'targets::tar_unblock_process(store = "_targets")'
+ps -u "$USER" -o pid,etime,cmd | grep -E 'exec/R' | grep -v grep
 ```
 
-**Launched under `screen`:** ending the screen does **not** stop the run.
-`tar_make()` wraps the pipeline in a `callr` child that does not receive SIGHUP; it
-survives and keeps holding the store lock.
+**Launched under `screen`:** ending the screen does not necessarily stop the run. A
+child R process started by the run (through `callr`, or a worker pool) does not
+receive SIGHUP, survives, and keeps whatever lock or file handle it held.
 
 ```sh
 ## 1. kill any retry loop FIRST, or it treats the dead R process as a crash
 ##    and relaunches everything
-## 2. end the screen (the callr child survives this)
+## 2. end the screen
 screen -X -S <name> quit
-## 3. find and kill the surviving callr child
-ps -u "$USER" -o pid,etime,cmd | grep -E 'callr|exec/R' | grep -v grep
+## 3. find and kill the surviving child R processes -- yours only
+ps -u "$USER" -o pid,etime,cmd | grep -E 'exec/R' | grep -v grep
 kill -TERM <pid>
-## 4. release the store lock
-Rscript-4.6.1 -e 'targets::tar_unblock_process(store = "_targets")'
 ```
 
-**Either way, then reap containers on every compute host.** Neither SSH nor the
-scheduler reaps a worker's container children, and orphaned per-container workers
-**restart** their containers. Kill the workers before the containers, or
-`docker stop` is whack-a-mole. Rebooting the control node has the same effect as
-killing the controller: remote workers keep running with nothing to report to.
+**Either way, then reap containers on every compute host** the run used. Neither SSH
+nor a worker scheduler reaps a worker's container children, and orphaned
+per-container workers **restart** their containers. Kill the workers before the
+containers, or `docker stop` is whack-a-mole. Rebooting the control node has the
+same effect as killing the controller: remote workers keep running with nothing to
+report to.
 
 ## Keeping nodes in sync
 
@@ -181,8 +174,8 @@ ssh nodeN 'cd <project> && Rscript-4.6.1 -e "renv::restore(prompt = FALSE)"'
 Three constraints worth automating into a `sync-nodes.R`:
 
 - **Worker checkouts must stay clean.** A dirty tree blocks the `git merge --ff-only`
-  that the sync relies on. Any target writing a git-tracked path must therefore be
-  `deployment = "main"`.
+  that the sync relies on, so nothing a run does on a worker may write a git-tracked
+  path.
 - **Group hosts by OS codename and warm one per group first.** The package cache is
   keyed by codename, so parallel cold restores across nodes sharing a network cache
   cause redundant compilation and cache contention.
@@ -191,8 +184,8 @@ Three constraints worth automating into a `sync-nodes.R`:
   just the version string.
 
 **Never sync or install while a run is live** -- it swaps the library out from
-under the active workers, and a lazy-load failure surfaces hours into a target with an
-error pointing at the package rather than the cause. A hook in `r-project-core` blocks
+under the active workers, and a lazy-load failure surfaces hours into a job with an
+error pointing at the package rather than the cause. A hook in this plugin blocks
 this. If the renv cache is shared between machines, note the asymmetry: **installing** on
 one machine only writes a new cache entry, which is safe for the others; the dangerous
 step is the **restore** that re-points a library. To prepare an updated library while a
@@ -202,36 +195,24 @@ run is live, stage it in a second clone with `renv::isolate()` or
 ## Know what is shared between machines
 
 Check rather than assume, with `ls -ld` and `df`. A common layout: home directories --
-code, the renv library, sometimes the store -- are **local disk on every host**, and only
-data and store directories are shared network mounts. Two consequences:
+code, the renv library, sometimes run state -- are **local disk on every host**, and only
+data directories are shared network mounts. Two consequences:
 
 - **Code reaches a host only through commit, push, pull.** Editing locally and launching
   elsewhere silently runs the old code.
-- **A `format = "file"` target whose file lives in a host-local directory** makes a shared
-  store reference a file that exists on one machine. `tar_outdated()` from any other host
-  then reports that target and its entire downstream cone as outdated. That is survivable
-  only if the file is **deterministic** -- regenerated byte-identically, so hashes match and
-  nothing downstream reruns. Check anything a file target writes for embedded timestamps,
-  absolute paths and process IDs.
+- **A result file written to a host-local directory exists on one machine.** Shared
+  state that records its path is then wrong on every other host. If such a file must be
+  regenerated elsewhere, make the write **deterministic** -- byte-identical on every
+  host -- by checking it for embedded timestamps, absolute paths and process IDs.
 
-**One store cannot host two concurrent `tar_make()` calls.** On NFS, a *refused* second
-`tar_make()` still compacts and replaces `_targets/meta/meta` before refusing, orphaning
-the running pipeline's open handle. Check for a live run and launch in a single command,
-never as two steps someone else can interleave.
+## Sizing parallel workers
 
-## Controller sizing
-
-- Size the local fallback pool so all branches run in one wave, but remember
-  `terra` memory fractions are **per process**: N workers can collectively exceed
-  RAM. Cap terra memory at `memfrac * node_RAM / n_workers`, and scope the cap to
-  the stage that needs it so a retune does not invalidate cached work.
+- **Memory settings are per process.** A `terra` memory fraction applies to each
+  worker, so N workers can collectively exceed RAM. Cap it at
+  `memfrac * node_RAM / n_workers`.
 - Some backends need hard caps for reasons unrelated to RAM -- a Java-backed
   service capped at 6 workers because more caused socket errors, and it must be
   process-based rather than forked because forking corrupts its sockets.
-- Raise `crashes_max` when running many workers; the default trips on a race.
-- Set an explicit retry count for container execs. The default is 0, and one
-  transient failure otherwise discards everything since the last checkpoint.
-- Checkpoint every generation, not every N.
 
 ## Do not co-run two heavy projects on the same nodes
 

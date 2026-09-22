@@ -103,8 +103,10 @@ missing, install them into the user library from that vanilla session with
 Honour package-specific settings (some suites need `TESTTHAT_PARALLEL=false`; some
 packages forbid `air format .`). See `package-conventions`.
 
-Before leaving this stage: version bumped and a `NEWS.md` bullet added for any
-user-visible change, and the documentation regeneration committed separately.
+Before leaving this stage: version bumped, a `NEWS.md` bullet added for any
+user-visible change, and `devtools::document()` run, with the regenerated `man/` and
+`NAMESPACE` in the same commit as the code that changed them. Only churn from a
+roxygen2 version change gets a commit of its own -- see `package-conventions`.
 
 The bullet goes under the existing `# <pkg> (development version)` heading, in the
 matching subsection -- never under a new heading for the bumped version, which
@@ -175,11 +177,12 @@ to cite.
 clone can restore. The lockfile must say `Source: GitHub`, `RemoteRef: main`, and a
 `RemoteSha` that exists on the remote.
 
-First confirm no pipeline is running in this project -- replacing a package under
-live workers breaks them hours in:
+First confirm no long run is live in this project -- replacing a package under
+live workers breaks them hours in. The `SessionStart` report lists what was running;
+check again now:
 
 ```sh
-pgrep -af "tar_make|DEoptim"
+pgrep -af "<the project's long-run patterns>"
 ```
 
 Then, from the project root, in the project session:
@@ -220,11 +223,11 @@ deps: <pkg> <version> (<why>)
 
 Two follow-ups the install does not do for you:
 
-- **`targets` does not see package changes.** Package function bodies are not
-  hashed (unless the project opts in with `tar_option_set(imports = )`), so
-  targets built with the old version stay "current". Identify the targets that
-  exercise the changed code and invalidate them one name at a time, or ask the user
-  which to rebuild. See `targets-staleness` in `r-targets`.
+- **Cached results do not see package changes.** A pipeline store or a simulation
+  cache built with the old version still counts as current, because neither hashes
+  the bodies of installed package functions by default. Identify the cached results
+  that exercise the changed code and rebuild them, or ask the user which to rebuild.
+  The framework's own skill says how to invalidate them.
 - **Multi-machine projects:** the new version reaches another host only through
   push, pull and restore on that host. Node-sync scripts restore from the
   **committed and pushed** lockfile, so the order is: commit the lockfile and

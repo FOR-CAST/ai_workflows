@@ -2,8 +2,8 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "r-targets",
   "displayName": "targets Pipelines (FOR-CAST)",
-  "version": "0.1.2",
-  "description": "Building, testing, debugging and running {targets} pipelines: a tested static validator and hermetic test suite with GitHub Actions CI for projects that are not R packages, multi-project stores and the definition-time vs run-time contract, crew and cluster runs that survive memory kills, and the silent-staleness traps that make pipelines report clean runs while producing wrong answers.",
+  "version": "0.2.0",
+  "description": "Building, testing, debugging and running {targets} pipelines: a tested static validator on top of the general test suite and CI, multi-project stores and the definition-time vs run-time contract, spatial objects and geotargets in the store, launching and stopping runs on shared machines with crew controllers sized to fit, a pipeline-invalidation review agent, and the silent-staleness traps that make pipelines report clean runs while producing wrong answers.",
   "author": {
     "name": "Alex Chubaty",
     "email": "achubaty@for-cast.ca"
@@ -15,6 +15,7 @@
     "targets",
     "pipeline",
     "crew",
-    "reproducibility"
+    "reproducibility",
+    "geotargets"
   ]
 }

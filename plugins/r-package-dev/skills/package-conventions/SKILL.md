@@ -1,6 +1,6 @@
 ---
 name: package-conventions
-description: Per-package overrides and local conventions that the r-lib package-development skills cannot know -- which packages forbid air format, which are still testthat edition 2, how to detect the naming convention, roxygen version pinning, separate documentation-regeneration commits, the single NEWS.md development heading that release retitling depends on, test-file pairing, and generating CITATION.cff. Use alongside r-lib:r-package-development, not instead of it.
+description: Per-package overrides and local conventions that the r-lib package-development skills cannot know -- which packages forbid air format, which are still testthat edition 2, how to detect the naming convention, roxygen version pinning, regenerated documentation committed with the code that changed it, the single NEWS.md development heading that release retitling depends on, test-file pairing, and generating CITATION.cff. Use alongside r-lib:r-package-development, not instead of it.
 when_to_use: Working in an R package in this ecosystem, once you already know the general devtools workflow -- specifically before running air format, devtools::document(), adding a NEWS.md entry, or writing new tests or names in an unfamiliar package.
 paths:
   - "**/DESCRIPTION"
@@ -51,7 +51,7 @@ Both are in active use and both are correct in their own repo:
 | Convention | Typical of |
 | --- | --- |
 | `snake_case`, often with a package prefix | newer, tidyverse-facing packages |
-| `camelCase` | the SpaDES/PredictiveEcology lineage; sometimes enforced by `object_name_linter("camelCase")` in `.lintr` |
+| `camelCase` | the PredictiveEcology lineage; sometimes enforced by `object_name_linter("camelCase")` in `.lintr` |
 
 One package deliberately mixes three conventions because it wraps an external
 tool's vocabulary. Take a majority vote over `NAMESPACE` exports; never impose a
@@ -69,17 +69,21 @@ one version change replaced `RoxygenNote` with `Config/roxygen2/version` and
 emitted one multi-line `importFrom()` per package. Say so rather than committing
 the churn. (Watch for packages carrying *both* fields, with the old one stale.)
 
-## Keep documentation regeneration in its own commit
+## Regenerated documentation goes in the same commit as the code
 
-Only one package in the corpus writes this rule down, and it is right. Mixed into
-a feature commit, a regenerated `man/` and `NAMESPACE` make the real change
-invisible. Commit the regeneration alone and name the roxygen2 version that
-produced it.
+Run `devtools::document()` before committing, and stage the regenerated `man/` and
+`NAMESPACE` with the code change that caused them. A commit whose roxygen and `.Rd`
+files disagree is a broken intermediate state. Roughly twenty standalone catch-up
+commits across these repos (`redoc`, `rebuild documentation`, `with prev`) exist
+because the documentation was left behind. A `Stop` hook in this plugin warns when
+roxygen lines changed in `R/` but `man/` and `NAMESPACE` are unmodified.
 
-Roughly twenty standalone catch-up commits exist across these repos whose entire
-content is documentation someone forgot to regenerate (`redoc`, `rebuild
-documentation`, `with prev`). A `Stop` hook in this plugin catches that case: it
-warns when roxygen lines changed in `R/` but `man/` and `NAMESPACE` are unmodified.
+A documentation commit of its own is right only when the code did not cause it:
+
+- a change that is documentation only;
+- churn from a tooling update, such as a roxygen2 version change (8.0.0 -> 8.1.0)
+  that rewrites every `.Rd` file. Commit that alone, naming the roxygen2 version
+  that produced it, so the churn does not bury a real change.
 
 ## `NEWS.md`: one development heading, never one per bump
 

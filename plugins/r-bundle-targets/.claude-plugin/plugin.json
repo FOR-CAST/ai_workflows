@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "r-bundle-targets",
+  "displayName": "targets Pipeline Project (bundle)",
+  "version": "0.1.0",
+  "description": "The r-bundle-research set plus r-targets, for a project built as a {targets} pipeline. Ships no skills or hooks of its own. A pipeline that also runs SpaDES modules or drives LANDIS-II adds r-bundle-spades or r-bundle-landis alongside; the shared plugins resolve once.",
+  "author": {
+    "name": "Alex Chubaty",
+    "email": "achubaty@for-cast.ca"
+  },
+  "repository": "https://github.com/FOR-CAST/ai_workflows",
+  "license": "MIT",
+  "keywords": [
+    "r",
+    "bundle",
+    "targets",
+    "pipeline",
+    "reproducibility"
+  ],
+  "dependencies": [
+    "r-bundle-research",
+    "r-targets"
+  ]
+}

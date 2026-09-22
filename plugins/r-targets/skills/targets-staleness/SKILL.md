@@ -122,10 +122,6 @@ From the fix commit:
 > Arrow datasets off disk were skipped whenever replicate content changed ...
 > `cumulative_burn_map` had the same hole via its `list.files()` scan.
 
-The same class hit a simulation spin-up template: a cached
-initial-communities snapshot survived a species-set change, so every container
-died with `Ep is not a species name` after ~108 s.
-
 **The remedy, and the idiom to reuse:** a `*_manifest` target carrying
 path/size/mtime fingerprints, which consumers map over.
 
@@ -166,47 +162,24 @@ A changed replicate then invalidates only its own scenario.
 
 ## Everything passed to a target factory is baked into the command hash
 
-`tar_simspades()` `bquote()`s its arguments in at definition time, so a cosmetic
-edit to an argument block invalidates the target. One project records the cost:
+A factory that `bquote()`s its arguments in at definition time makes every argument
+part of the command, so a cosmetic edit to an argument block invalidates the target.
+One project records a stage whose rebuild takes 22 hours being invalidated again and
+again by worker-count and memory-fraction toggles in its factory arguments. Before
+editing any argument block of a cached stage, check what it costs to rebuild.
+Runtime resource knobs (worker counts, memory fractions) should not live in a hashed
+command at all.
 
-> `local_workers` toggling 8 -> 1 -> 8 and the 9014 -> 9015 `mem_workers`/`mem_frac`
-> command-shape change kept invalidating the baked command hash
+## Confirming a change did what it should
 
--- for a stage whose rebuild is 22 hours. Before editing any argument block of a
-cached stage, check what it costs to rebuild. Runtime resource knobs
-(`mem_workers`, worker counts) should not live in a hashed command at all.
-
-## Reproducibility: aggregates hide per-cell error
-
-An unseeded resample inside a *dependency package* meant every
-rebuild produced a different landscape:
-
-> stand age differs 4,848 cells (0.181%); biomass differs 90,883 cells (3.385%) ...
-> landscape mean age 91.3 vs 91.3; landscape mean B 11629.5 vs 11620.6 (0.08%).
-> **The stable aggregates are why this went unnoticed.**
-
-Two rules follow, and they generalise well beyond this bug:
-
-- **Compare per-cell, or on medians. Never on landscape aggregates.** A related
-  case: *"a 5-year offset hides inside a +/-5 year agreement check, which reported
-  100%; it is only visible in the medians."*
-- **Do not change packages mid-test.** *"an earlier comparison confounded this
-  with a landr profile sync that landed between the two runs."*
-
-## Method: measure before you change
-
-The project's own method, which is what caught every silent bug:
-
-1. State the hypothesis and the number it predicts.
-2. Measure against an **independent** reference (NTEMS vs SCANFI;
-   `gdallocationinfo` vs `terra::values`).
-3. Compare **per-cell or on medians**, never on aggregates.
-4. Hold package versions fixed across the comparison.
-5. If the hypothesis is falsified, record the measurement **inline next to the
-   setting** and in the commit, so the dead end is not retried.
+Compare the rebuilt outputs with the previous ones per cell or on medians, against an
+independent reference, with package versions held fixed across both runs --
+`verification-method` in `r-code-review`. A validation number that stays
+bit-identical across a change that should have moved it is the staleness signal
+above.
 
 ## Related
 
-- Spatial objects across the store: see `spatial-objects-and-targets` in the
-  `r-geospatial` plugin (external pointers do not survive serialisation).
-- Where a setting belongs: see `project-config-layout` in `r-project-core`.
+- Spatial objects across the store: `targets-spatial` (external pointers do not
+  survive serialisation).
+- Definition-time settings and why workers never see them: `targets-project-setup`.

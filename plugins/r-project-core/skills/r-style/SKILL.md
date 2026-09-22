@@ -36,7 +36,7 @@ Prose `.md` (CLAUDE.md, design notes) is exempt.
 Both conventions are in active use and both are correct in their own repo:
 
 - **snake_case**, often with a package prefix (`dryad_search`, `build_model_dataset`)
-- **camelCase**, the PredictiveEcology/SpaDES house style (`createTurtles`,
+- **camelCase**, the PredictiveEcology house style (`createTurtles`,
   `prepClimateLayers`, `NLwith`), sometimes enforced by
   `object_name_linter("camelCase")` in `.lintr`
 
@@ -92,27 +92,25 @@ Extend `skip` for any function whose call is a long hand-curated block that air
 would re-wrap on every run:
 
 - `globalVariables` -- packages with large `utils::globalVariables()` vectors
-- `defineModule`, `defineParameter`, `expectsInput`, `createsOutput`,
-  `scheduleEvent` -- the SpaDES module metadata DSL, which is hand-aligned
 - `use` -- long import blocks
+- any hand-aligned metadata DSL a framework uses
 
-## Package-qualify calls in pipeline and worker code
+## Package-qualify calls in code that runs in another R process
 
 ```r
-ggplot2::ggplot(d) + ggplot2::geom_sf(...)     ## yes, inside a target or worker
+ggplot2::ggplot(d) + ggplot2::geom_sf(...)     ## yes, inside a worker
 ggplot(d) + geom_sf(...)                        ## no
 ```
 
-Worker environments under `targets`/`crew`/`callr` do not reliably attach
-packages, and an unqualified call then fails only on the worker, hours in.
-Package-qualify anything that runs inside a target command, a crew worker, or a
-Quarto chunk.
+Worker processes (`callr`, `parallel`, `future`, `mirai`, a pipeline's workers) do
+not reliably attach packages, and an unqualified call then fails only on the worker,
+hours in. Package-qualify anything that runs in a worker or a Quarto chunk.
 
 Do **not** attach packages in `.Rprofile`. It breaks a fresh clone and CI, where the
 packages are not installed yet. Nulling the profile in CI (`R_PROFILE_USER: /dev/null`)
 is not a general fix: it also stops renv activating and drops the CRAN mirror that
 `setup-r` configures, so it suits only steps that never need the project library. See
-`targets-testing-ci` in `r-targets`.
+`project-tests-ci`.
 
 ## roxygen in non-package `R/`
 
@@ -138,7 +136,7 @@ Mark structurally-complete-but-unverified work with an explicit marker:
 ## unconfirmed against the source data dictionary.
 ```
 
-**Comments are the spec.** Dated `##` post-mortems inline in `_targets.R`,
+**Comments are the spec.** Dated `##` post-mortems inline in the driver scripts,
 `.Rprofile`, `_local.R` and `.gitignore` are how these projects carry institutional
 memory. A refactor that drops them is a regression, not a cleanup.
 

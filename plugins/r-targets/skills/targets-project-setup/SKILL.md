@@ -1,12 +1,13 @@
 ---
 name: targets-project-setup
-description: Structure a FOR-CAST {targets} pipeline -- multi-project _targets.yaml and TAR_PROJECT, the targets_* list module pattern required by tarborist, tar_source() vs explicit source(), tar_option_set choices, env-var stage gates, crew controllers, and the deliberate tripwires (cue="never", pinned run fleets) that must never be tidied away.
-when_to_use: Creating or restructuring a _targets.R; adding a new R/targets_*.R module or target group; setting up a second targets project; choosing tar_option_set values; wiring crew controllers; reviewing a pipeline's architecture.
+description: Structure a FOR-CAST {targets} pipeline -- multi-project _targets.yaml and TAR_PROJECT, the targets_* list module pattern required by tarborist, tar_source() vs explicit source(), load order and the definition-time vs run-time contract for _local.R and _hosts.R, tar_option_set choices, env-var stage gates, targets that write tracked files or render reports, and the deliberate tripwires (cue="never", pinned run fleets) that must never be tidied away.
+when_to_use: Creating or restructuring a _targets.R; adding a new R/targets_*.R module or target group; setting up a second targets project; choosing tar_option_set values; editing _local.R or _hosts.R in a targets project; a value from _local.R is missing inside a running target; rendering a Quarto report from the pipeline; reviewing a pipeline's architecture.
 paths:
   - "**/_targets.R"
   - "**/_targets*.R"
   - "**/_targets.yaml"
   - "**/R/targets_*.R"
+  - "**/_local.R"
 ---
 
 # Structuring a targets pipeline
@@ -24,12 +25,13 @@ And in `_targets.R`: *"Use `list()` (not `c()`) so tarborist recognises the pipe
 The sanctioned exception is a group that must read an option set in `_local.R`,
 which is sourced *after* `tar_source()`. Document the reason at the wrapper.
 
-Register custom factories so tarborist can see their targets, in `.vscode/settings.json`:
+Register every custom target factory the project uses so tarborist can see its
+targets, in `.vscode/settings.json` -- the geotargets factories (`targets-spatial`),
+and any factory a domain package provides:
 
 ```json
 { "tarborist.additionalSingleTargetFactories":
-  ["tar_terra_rast", "tar_terra_vect", "tar_terra_sprc", "tar_terra_tiles",
-   "tar_simspades", "<pkg>::tar_landis"] }
+  ["tar_terra_rast", "tar_terra_vect", "<pkg>::tar_<factory>"] }
 ```
 
 ## `tar_source()` is not always safe
@@ -68,6 +70,20 @@ late."*
 Guard cluster config with `file.exists("_hosts.R")`, never a hostname match --
 that keeps the guard hostname-free and survives the cluster being renamed.
 
+## Definition time and run time
+
+`_local.R` and `_hosts.R` are read by the controlling session, at pipeline
+**definition** time. Crew workers never source them. Three consequences:
+
+1. **A `Sys.setenv()` or `options()` call in `_local.R` never reaches a worker.** Put
+   anything a worker must see in `.Rprofile` -- see `project-config-layout` in
+   `r-project-core`.
+2. **A value read from `_local.R` is baked in at definition time.** Anything that
+   depends on it must be `deployment = "main"`, and changing it does not invalidate
+   targets on its own -- see `targets-staleness`.
+3. **`_local.R` values do not exist inside a running target.** As one project's docs
+   put it: *"Do not assume `local$...` exists inside a running target."*
+
 ## Multi-project layouts
 
 `_targets.yaml` with **no default project** is a deliberate safety pattern:
@@ -94,7 +110,7 @@ see `targets-staleness`.
 | `error = "continue"` | **temporary only.** Failed branches are silently skipped. If you set it, write a dated revert condition in a comment, and always check `tar_meta(fields = "error")` afterwards |
 | `trust_timestamps = TRUE` | only for multi-GB archives where hashing is prohibitive |
 | `format = "qs"` | fine, but the backend changed: targets 1.9.0 switched it from `qs` to `qs2`, and `qs` was archived from CRAN on 2026-01-17. A lockfile still pinning `qs` will not restore from CRAN |
-| `seed` | set it; see the reproducibility section of `targets-staleness` |
+| `seed` | set it; unseeded RNG is audit item 6 in `targets-staleness` |
 
 ## Stage gating by environment variable
 
@@ -124,16 +140,32 @@ cue = tar_cue(mode = "never")   ## FROZEN 2026-07-10 ... REMOVE before the produ
                                 ## (it freezes ALL branches, not just the baselines)
 ```
 ```r
-landis.run_scenarios = c("ForCS_only", "ForCS_fire")   ## pin the run fleet so no tar_make can
-                                                       ## launch production
+run_scenarios = c("baseline", "fire")   ## pin the run fleet so no tar_make can
+                                        ## launch production
 ```
 ```r
-## Deliberately NOT a variant of mainSim_<sa>: the spec is COPIED, not shared, so editing it can
-## never invalidate mainSim_<sa> (a 22 h rebuild); gated behind an env var.
+## Deliberately NOT a variant of main_<sa>: the spec is COPIED, not shared, so editing it can
+## never invalidate main_<sa> (a 22 h rebuild); gated behind an env var.
 ```
 
 If a comment says a duplication or a freeze is deliberate, believe it. "Refactoring"
 these is how a 22-hour rebuild or a production launch happens by accident.
+
+## Targets that write files or render reports
+
+- **`deployment = "main"` for any target that writes a git-tracked path** -- a rendered
+  PDF, a README, a generated `.bib`, an input manifest. A worker would otherwise write
+  it inside that worker's checkout and block the next node sync (`targets-cluster-runs`).
+- A function backing a `format = "file"` target returns the path it wrote.
+- **Take a rendered report's path from the render, never reconstruct it.** Quarto in
+  project mode mirrors the input directory under `output-dir`; `tar_quarto()` records
+  the real path. See `quarto-reports` in `r-reporting`.
+- **Crew workers do not inherit the shell `PATH`.** Resolve the Quarto binary (or any
+  external tool) explicitly before a worker renders.
+- **Two concurrent renders of one template in one directory clobber each other's
+  intermediates.** Render from a branch-unique copy when branching over scenarios.
+- A provenance target -- a reproducibility receipt, a session record -- is set to
+  `cue = tar_cue(mode = "always")`. Seeing it rebuild on every run is expected.
 
 ## Comments are the spec
 

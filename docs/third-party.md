@@ -39,7 +39,7 @@ so put "plans and specs go in `_tmp/`, uncommitted" in the project `CLAUDE.md`.
 
 | Use | From | When | Mind |
 | --- | --- | --- | --- |
-| `systematic-debugging` | superpowers | before proposing any fix | "reproduce" means `tar_meta()` / `tar_workspace()` first, not re-running a long target; pair with `targets-debugging` and `run-forensics` |
+| `systematic-debugging` | superpowers | before proposing any fix | pair with `root-cause-fixes`, which says where the fix goes; in a `{targets}` project "reproduce" means `tar_meta()` / `tar_workspace()` first (`targets-debugging`), not re-running a long target |
 
 ## Verify
 
@@ -52,7 +52,7 @@ so put "plans and specs go in `_tmp/`, uncommitted" in the project `CLAUDE.md`.
 
 | Use | From | When | Mind |
 | --- | --- | --- | --- |
-| `r-code-review` agents | here | spatial, staleness, dependency, run-failure review | first choice for research code |
+| `r-code-review` agents | here | spatial, dependency, run-failure review; `r-targets` adds the staleness auditor | first choice for research code |
 | `/code-review` | built-in | general bugs on the diff or a PR | `--comment` publishes |
 | `critical-code-reviewer` | `posit-dev@posit-dev-skills` | a collaborator's PR to your package | drafts, then pending review, then submit -- each on request; flags `df`/`x` naming in analysis code |
 | `receiving-code-review` | superpowers | acting on review feedback | verify each item before changing code |

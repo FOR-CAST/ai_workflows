@@ -55,8 +55,8 @@ Check before adding:
 grep -c importFrom NAMESPACE
 ```
 
-Follow whichever the package already does. In pipeline and worker code
-(`targets`, `crew`, Quarto chunks), always `pkg::`-qualify regardless -- worker
+Follow whichever the package already does. In code that runs in another R process
+(workers, `callr`, Quarto chunks), always `pkg::`-qualify regardless -- worker
 environments do not reliably attach packages.
 
 ## `utils::globalVariables()` for NSE

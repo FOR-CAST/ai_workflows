@@ -1,7 +1,7 @@
 ---
 name: landis-inputs
 description: Validate LANDIS-II inputs before running, and the file-format conventions it silently depends on -- NoData and map-code encoding, permitted pixel types, dyadic season proportions, ecoregion/map-code consistency, and the literal filenames the runner patches. LANDIS fails on bad input with a non-zero exit and empty stderr, so preflight validation is the only cheap defence.
-when_to_use: Generating or editing LANDIS-II input rasters or text files; a LANDIS run dies seconds into extension initialisation; "Unknown map code"; a scenario or extension file is being written from R; before launching a batch or calibration.
+when_to_use: Generating or editing LANDIS-II input rasters or text files; a LANDIS run dies seconds into extension initialisation; "Unknown map code"; a scenario or extension file is being written from R; before launching a batch or calibration; wiring LANDIS runs into a targets pipeline.
 paths:
   - "**/*.R"
 ---
@@ -101,3 +101,17 @@ terra::writeRaster(r, filename = out, overwrite = TRUE,
   "refuses to overwrite". That was tried and reverted: deleting real results is
   worse than the error. Write logs to a temp file and copy them into place
   `on.exit()`, since the output dir cannot pre-exist.
+
+## Running LANDIS from a targets pipeline
+
+- **A cached input can outlive the change that should have replaced it.** A cached
+  initial-communities snapshot survived a species-set change, because the target that
+  built it returned a stable path; every container then died with `Ep is not a species
+  name` after ~108 s. Fingerprint the inputs a scenario directory is built from (the
+  `*_manifest` pattern in `targets-staleness`), so a species-set change rebuilds it.
+- **Pin the run fleet** so no `tar_make()` can launch production by accident:
+  `landis.run_scenarios = c("ForCS_only", "ForCS_fire")`, with the reason in a comment.
+  Treat such a pin as deliberate; do not remove it without asking.
+- Register the package's LANDIS target factory with tarborist
+  (`"tarborist.additionalSingleTargetFactories": ["<pkg>::tar_landis"]` in
+  `.vscode/settings.json`) so the IDE can see its targets.

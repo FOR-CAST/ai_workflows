@@ -1,7 +1,7 @@
 ---
 name: raster-scale-and-memory
 description: Working with rasters too large for RAM -- writing straight to disk, terra memory fractions under parallel workers, tiling with overlap, out-of-core aggregation via arrow and duckdb, datatype selection, and the dimension and NoData guards that stop silent misalignment.
-when_to_use: A raster operation runs out of memory or takes far too long; sizing crew/parallel workers for raster work; tiling a large raster; computing statistics over data that does not fit in RAM; choosing a raster datatype or NoData convention; two rasters that should align but do not.
+when_to_use: A raster operation runs out of memory or takes far too long; sizing parallel workers for raster work; tiling a large raster; computing statistics over data that does not fit in RAM; choosing a raster datatype or NoData convention; two rasters that should align but do not.
 paths:
   - "**/*.R"
 ---
@@ -37,12 +37,11 @@ claimed collectively, which is how an 8-worker run OOM-crashed in a fire-spread
 model that ran fine serially. Either cap terra memory at
 `memfrac * node_RAM / n_workers`, or reduce workers.
 
-Scope the cap to the stage that needs it. Applying it globally ties an expensive
-cached stage's command hash to the worker count and rebuilds it whenever you
-retune -- a runtime resource knob should not be baked into a hashed command.
+Scope the cap to the stage that needs it. If the value feeds anything that is hashed
+or cached, retuning it invalidates that work -- a runtime resource knob should not be
+part of a cache key.
 
-With `targets`: `tar_option_set(memory = "transient", storage = "worker",
-retrieval = "worker")` and call `gc()` explicitly inside long loops.
+Call `gc()` explicitly inside long loops.
 
 `OMP_NUM_THREADS` is not the only per-process pool. **data.table takes 50% of the
 logical CPUs, per process.** It drops to a single thread only inside a *fork*, and
@@ -82,7 +81,7 @@ write chunks to a parquet dataset and aggregate through duckdb:
 
 ```r
 arrow::write_parquet(data.frame(distance = dists),
-  sink = file.path(ds_dir, paste0("chunk_", targets::tar_name(), ".parquet")))
+  sink = file.path(ds_dir, paste0("chunk_", chunk_id, ".parquet")))
 
 ds |> arrow::to_duckdb() |>
   dplyr::summarise(q25 = quantile(distance, 0.25), q75 = quantile(distance, 0.75))
@@ -91,10 +90,6 @@ ds |> arrow::to_duckdb() |>
 Record the measured cost next to the code -- one such note reads *"adding more
 quantile calculations ramps up memory use; computing q00, q25, q50, q75 and q100
 uses ~250 GB RAM"*. That comment is worth more than the code.
-
-If dynamic branching over your object type fails (branching over `sf` does, even
-though `sf` inherits from `data.frame`), chunk manually and recombine, and put the
-chunk-maker on `deployment = "main"` so worker dispatch stays sane.
 
 ## Guards that catch silent misalignment
 

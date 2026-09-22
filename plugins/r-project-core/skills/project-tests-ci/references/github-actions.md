@@ -1,4 +1,4 @@
-# GitHub Actions for a targets + renv project
+# GitHub Actions for an R + renv project
 
 ## Contents
 - First: nobody's timings are real until the job has run
@@ -33,12 +33,13 @@ branch, record the real cold-cache time, then set `timeout-minutes`.**
    2. `r-lib/actions/setup-r@v2` with `r-version: renv`.
    3. System libraries derived from `renv.lock` (`assets/ci-sysreqs.R`), run from
       `${{ runner.temp }}`.
-   4. `quarto-dev/quarto-actions/setup@v2` -- before anything that defines the pipeline, if
-      it uses `tar_quarto()`.
-   5. `r-lib/actions/setup-renv@v2` with `bypass-cache: never`.
-   6. A warning if the restored library differs from the lockfile.
-   7. Tests, then the validator.
-   8. A guard that the checkout is untouched, including gitignored data paths.
+   4. `r-lib/actions/setup-renv@v2` with `bypass-cache: never`.
+   5. A warning if the restored library differs from the lockfile.
+   6. Tests, then any project-specific checks.
+   7. A guard that the checkout is untouched, including gitignored data paths.
+
+   A tool the project runs while it loads (Quarto, for a pipeline that inspects reports
+   when it is defined) must be installed before setup-renv's restore and the tests.
 
 Prefer the upstream `r-lib/actions` directly over organisation-specific wrapper actions.
 
@@ -107,8 +108,8 @@ lockfile; 29 CRAN versions plus 31 GitHub packages in another.
 
 Dated snapshots do not rescue this -- a lockfile accretes over time and matches no single
 snapshot date. The real fix is deliberately refreshing the lockfile against current CRAN,
-which is a decision with its own consequences (every target reaching a changed package's
-behaviour may change). Moving a single heavy package from a GitHub pin to its CRAN release is
+which is a decision with its own consequences (every result that depends on a changed
+package's behaviour may change). Moving a single heavy package from a GitHub pin to its CRAN release is
 a cheap partial win. `NOT_CRAN=true` lets an arrow source build download a prebuilt libarrow.
 
 ## renv surprises

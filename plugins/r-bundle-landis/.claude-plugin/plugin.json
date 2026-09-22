@@ -2,8 +2,8 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "r-bundle-landis",
   "displayName": "LANDIS-II Driven Project (bundle)",
-  "version": "0.1.0",
-  "description": "The r-bundle-research set plus r-landis-ii, for a project that writes LANDIS-II inputs and reads its outputs. Ships no skills or hooks of its own. Add r-bundle-spades alongside it where SpaDES modules also run; the shared plugins resolve once.",
+  "version": "0.2.0",
+  "description": "The r-bundle-research set plus r-landis-ii, for a project that writes LANDIS-II inputs and reads its outputs. Add r-bundle-targets alongside when the runs are driven from a {targets} pipeline. Ships no skills or hooks of its own. Add r-bundle-spades alongside it where SpaDES modules also run; the shared plugins resolve once.",
   "author": {
     "name": "Alex Chubaty",
     "email": "achubaty@for-cast.ca"
@@ -14,8 +14,7 @@
     "r",
     "bundle",
     "landis-ii",
-    "simulation",
-    "targets"
+    "simulation"
   ],
   "dependencies": [
     "r-bundle-research",

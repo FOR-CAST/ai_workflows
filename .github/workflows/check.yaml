@@ -114,7 +114,7 @@ jobs:
       - name: actionlint, on our workflows and on the shipped template
         run: |
           actionlint -color
-          actionlint -color plugins/r-targets/skills/targets-testing-ci/assets/check.yaml
+          actionlint -color plugins/r-project-core/skills/project-tests-ci/assets/check.yaml
 
       - name: Install zizmor
         run: pipx install "zizmor==$ZIZMOR_VERSION"
@@ -125,7 +125,7 @@ jobs:
         run: |
           zizmor --persona=regular --no-progress --no-online-audits .github/workflows
           zizmor --persona=regular --no-progress --no-online-audits \
-            plugins/r-targets/skills/targets-testing-ci/assets/check.yaml
+            plugins/r-project-core/skills/project-tests-ci/assets/check.yaml
 
   skills:
     name: Skill validation

@@ -65,33 +65,9 @@ that, on checking, did not exist -- kept *"so the false alarm isn't re-raised."*
 
 ## Long runs
 
-The house launcher pattern:
-
-```bash
-systemd-run --user --unit=calib-recal --collect --working-directory="$PWD" \
-  bash _tmp/run_recalibration.sh
-tail -f _tmp/recalibration.log
-```
-
-Launch through `systemd-run --user`, not `screen` or `nohup`: memory-pressure kills
-act on the IDE's whole cgroup, and only a separate unit survives. See
-`hpc-cluster-runs` in `r-targets`.
-
-Preflight first -- `pgrep -af "tar_make|DEoptim"` -- and confirm nothing else is
-running. (A `PreToolUse` hook in this plugin blocks library-mutating commands
-while a run is live, because syncing swaps the library under active workers.)
-
-The wrapper script frames the run so the log is self-describing:
-
-```bash
-{ echo "=== <name> launch $(date -Is) ==="
-  Rscript-4.6.1 -e 'targets::tar_make(callr_function = NULL)'
-  echo "=== EXIT=$? $(date -Is) ==="
-} > "$LOG" 2>&1
-```
-
-`callr_function = NULL` because the outer callr wrapper crashes under heavy
-DEoptim + container load.
+Launch through `systemd-run --user`, with a wrapper that frames the log, and check
+nothing else is running first -- `hpc-cluster-runs` has the pattern. The working log
+records the unit name and the log path under "Watch".
 
 **Rename the log with a failure suffix when a run dies** -- the existing
 convention makes the failure mode greppable months later:

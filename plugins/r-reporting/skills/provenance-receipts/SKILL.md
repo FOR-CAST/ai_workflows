@@ -42,12 +42,8 @@ file itself. Leave `version_or_vintage`, `license` and `citation` out until they
 verified, and say why under `extra` as `_todo_*`. Never a plausible guess. See
 `citation-integrity` -- the manifest is explicitly in scope for that rule.
 
-Two mechanical points:
-
-- The target that writes the manifest must be `deployment = "main"`, because it
-  writes a git-tracked path.
-- If the project's `.gitignore` denies `*.json` wholesale, the manifest needs an
-  explicit `!` allowlist entry or it silently will not be committed.
+If the project's `.gitignore` denies `*.json` wholesale, the manifest needs an
+explicit `!` allowlist entry or it silently will not be committed.
 
 ## 2. A generated data-source bibliography
 
@@ -111,8 +107,8 @@ sessioninfo::session_diff(readRDS("_scratch/receipts/session-control.rds"),
                           readRDS("_scratch/receipts/session-worker.rds"))
 ```
 
-Set any provenance target to rebuild every time (`cue = tar_cue(mode = "always")`)
--- seeing it rebuild on every run is expected, not a bug.
+A receipt describes the run that produced it, so regenerate it on every run rather
+than caching it.
 
 ## What gets a DOI
 
@@ -158,5 +154,6 @@ CI that deliberately does *not* restore the full environment should say so:
 > value
 
 A cheap check that parses every tracked `.R` file, validates the lockfile JSON and
-validates `CITATION.cff` (`cffconvert --validate`; see `r-targets:targets-testing-ci`)
-catches most real breakage without a 40-minute build.
+validates `CITATION.cff` (`cffconvert --validate`; the syntax job in
+`r-project-core:project-tests-ci`) catches most real breakage without a 40-minute
+build.

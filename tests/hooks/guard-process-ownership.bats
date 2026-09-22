@@ -27,6 +27,13 @@ setup() {
   reason | grep -q "'docker stop'"
 }
 
+@test "the reason points at the general shutdown skill, not a framework's" {
+  bash_hook "$G" 'pkill -f run_model'
+  [ "$(decision)" = deny ]
+  reason | grep -q 'hpc-cluster-runs'
+  ! reason | grep -q 'targets-debugging'
+}
+
 @test "service stops are denied" {
   bash_hook "$G" 'systemctl stop rstudio-server'
   [ "$(decision)" = deny ]

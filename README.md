@@ -14,17 +14,21 @@ Eight plugins, organized by the kind of work they support:
 
 | Plugin | For | Contents |
 | --- | --- | --- |
-| **r-project-core** | every R research project | R style, ASCII-only, citation integrity, config layout, commit discipline, design logs, project policy -- plus 11 guardrail hooks |
+| **r-project-core** | every R research project | root-cause fixes, R style, ASCII-only, citation integrity, config layout, tests and CI for non-package projects, long runs on shared machines, commit discipline, design logs, project policy -- plus 11 guardrail hooks |
 | **r-package-dev** | R package development | the development -> CI -> main -> project-install workflow, plus only the deltas over the `r-lib` skills: per-package overrides, dependency declaration, roxygen/NAMESPACE drift hook |
-| **r-targets** | `{targets}` pipelines | tests + static validator + CI for pipeline projects, silent-staleness auditing, project structure, debugging, cluster runs |
+| **r-targets** | `{targets}` pipelines | static validator and targets additions to tests and CI, silent staleness (skill and review agent), project structure, debugging, spatial objects in the store, cluster runs |
 | **r-geospatial** | GIS / spatial analysis | terra and sf across process boundaries, geometry hygiene, large-raster strategies |
 | **r-spades** | SpaDES module development | the module metadata contract, `.inputObjects` timing, caching lessons |
 | **r-landis-ii** | LANDIS-II integration | input preflight validation, output-reading rules |
 | **r-reporting** | reports, provenance | writing for a stated audience (always asks who), summary-first structure, plain language; Quarto path traps, deriving numbers from the pipeline, manifests and receipts |
-| **r-code-review** | software review | four read-only review subagents, plus the verification method |
+| **r-code-review** | software review | three read-only review subagents, plus the verification method |
 
 Skills load on demand, so they cost nothing until they are relevant. Several are
 scoped with `paths:` so they activate only when you are working on matching files.
+
+The general plugins carry no framework-specific advice. Anything that applies only to
+`{targets}`, SpaDES or LANDIS-II lives in that framework's plugin, including where two
+meet (a SpaDES simulation run as a target is in `r-spades`).
 
 ## Install
 

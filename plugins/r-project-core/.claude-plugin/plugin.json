@@ -2,8 +2,8 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "r-project-core",
   "displayName": "R Research Project Core",
-  "version": "0.3.0",
-  "description": "Baseline conventions and deterministic guardrails for R-based research projects: air formatting, ASCII-only code and reports, citation integrity, the .Rprofile/_local.R/_hosts.R config split, commit discipline, and PreToolUse guards against destructive commands, hand-editing generated files, and mutating the library while a long run is live.",
+  "version": "0.4.0",
+  "description": "Baseline conventions and deterministic guardrails for R-based research projects: fixing defects at their root cause, air formatting, ASCII-only code and reports, citation integrity, the .Rprofile/_local.R/_hosts.R config split, hermetic tests and CI for projects that are not packages, long runs on shared machines, commit discipline, and PreToolUse guards against destructive commands, hand-editing generated files, and mutating the library while a long run is live.",
   "author": {
     "name": "Alex Chubaty",
     "email": "achubaty@for-cast.ca"

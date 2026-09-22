@@ -73,9 +73,9 @@ How these generators produce confident-looking wrong fields:
   Without an `inst/CITATION`, R builds the entry from `DESCRIPTION`, taking the year
   from `Date/Publication`, else `Date`, else the build's `Packaged` stamp -- so a GitHub
   or r-universe install is dated by when it was built, not released, and usually has no
-  DOI. It finds packages with `renv::dependencies()`, which does not see SpaDES
-  `reqdPkgs`; pass `pkgs =` explicitly (the targets packages plus
-  `workflowtools::get_module_packages()`).
+  DOI. It finds packages with `renv::dependencies()`, which sees only packages the
+  code loads or declares in the usual places; where a project loads packages some
+  other way, pass `pkgs =` explicitly.
 - **cffr 1.4.2** writes `doi: 10.32614/CRAN.package.<pkg>` for a package found in *any*
   configured repository, r-universe included. A package that is not on CRAN then carries
   a DOI that does not resolve.

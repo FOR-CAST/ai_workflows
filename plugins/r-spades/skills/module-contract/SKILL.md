@@ -98,6 +98,12 @@ Also: `reqdPkgs` is invisible to `renv`, which follows only
 Imports/Depends/LinkingTo. Projects carry an `_dependencies.R` shim
 (`if (FALSE) { library(...) }`) so those packages stay in the lockfile.
 
+The same blindness reaches package citations: `grateful::cite_packages()` finds
+packages with `renv::dependencies()`, so it never sees a module's `reqdPkgs`. Pass
+`pkgs =` explicitly -- the pipeline's packages plus
+`workflowtools::get_module_packages()` -- and check the result as
+`citation-integrity` in `r-project-core` describes.
+
 ## Set `loadOrder` explicitly
 
 Implicit load order is unreliable once modules are nested or branched. State it.

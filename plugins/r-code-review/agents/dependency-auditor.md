@@ -31,7 +31,7 @@ package work here, and it is always caught late -- on CI or by a user.
 7. **The same repo requested at two different branches** anywhere in the graph.
    The resolver treats the solve as one problem, so this fails everything *and*
    misreports every other package as conflicting. Check `Remotes:` in DESCRIPTION
-   and `reqdPkgs` in any module metadata together.
+   together with every other place the project requests packages from a remote.
 8. **A pin that has drifted on the remote.** A branch pin can fall behind without
    any local change, leaving it resolving below a version floor another package
    requires. Re-resolve rather than assuming local state is the problem.
@@ -45,9 +45,10 @@ package work here, and it is always caught late -- on CI or by a user.
     ```
     An unpushed pointer breaks `git submodule update` for every other machine and
     every fresh clone.
-11. **Packages required by module metadata but invisible to the lockfile.**
-    Dependency scanners follow only Imports/Depends/LinkingTo, so packages named
-    only in module metadata need an explicit shim to stay in the lockfile.
+11. **Packages the project needs but the lockfile cannot see.** Dependency scanners
+    follow `library()` calls and Imports/Depends/LinkingTo, so a package named only in
+    some other declaration needs an explicit shim (`_dependencies.R`) to stay in the
+    lockfile.
 
 Report file, line, the exact declaration to add, and whether it belongs in
 `Imports`, `Suggests`, or `Remotes`. Be specific; do not recommend "review the

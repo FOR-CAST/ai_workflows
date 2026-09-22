@@ -1,4 +1,4 @@
-# A hermetic testthat suite for a targets project
+# A hermetic testthat suite for an R project that is not a package
 
 ## Contents
 - Layout and invocation
@@ -21,16 +21,16 @@ identical -- `assets/run-tests.R`:
 
 ```r
 Sys.setenv(TESTTHAT_EDITION = "3", NOT_CRAN = "true")
-targets::tar_source()                 # or the explicit file list _targets.R uses
+for (f in project_files) source(f)    # exactly what the project sources, in its order
 testthat::test_dir("tests/testthat", stop_on_failure = TRUE)
 ```
 
-**Source exactly what the pipeline sources.** `tar_source()` executes every file in `R/`.
-Where `R/` also holds standalone scripts -- one that deletes old outputs, one that signs in
-to a cloud drive, one that rewrites DESCRIPTION -- the pipeline deliberately sources a named
-list of files instead, and the tests must use that same list. Check before you start:
-`top_level_side_effects("R")` in `scripts/validate_lib.R` lists every file that does more
-than define things at top level.
+**Source exactly what the project sources.** Sourcing `R/` wholesale executes every file in
+it. Where `R/` also holds standalone scripts -- one that deletes old outputs, one that signs
+in to a cloud drive, one that rewrites DESCRIPTION -- the project deliberately sources a named
+list of files instead, and the tests must use that same list. `top_level_side_effects()` in
+`assets/test-project-sources.R` lists every file that does more than define things at top
+level.
 
 **Put shared helpers in `helper-*.R`, and never name one after a base function.** A helper
 called `box()` defined in one test file silently resolved to `graphics::box()` in another.
@@ -71,9 +71,9 @@ Two ways to redirect locations; choose deliberately:
     path
   }
   ```
-  **But** `targets` hashes a function's deparsed source, so adding an argument to a helper
-  that many targets reach invalidates all of them. In a pipeline with an expensive built
-  store, batch such edits with a change that already forces a rebuild.
+  **But** where a pipeline or cache hashes function source, adding an argument to a
+  widely-used helper invalidates everything that reaches it. Batch such edits with a
+  change that already forces a rebuild.
 - **Redirect the working directory in the test**, leaving function source untouched:
   ```r
   withr::local_dir(withr::local_tempdir())
@@ -107,7 +107,8 @@ that only checks "it ran" buys almost nothing. Build the suite around **closed-f
 concentric rings whose areas you compute by hand, points at known separations, fixtures
 whose answer was derived independently of the code.
 
-**Test the functions, not the targets.** Let the pipeline compose them.
+**Test the functions, not the scripts or pipeline steps that call them.** Let the
+project compose them.
 
 Turn each hard-won gotcha into a regression test -- the ones recorded in project memory,
 `CLAUDE.md`, or dated `## NOTE:` comments are exactly the bugs that recur.
@@ -122,16 +123,14 @@ body.
 
 ## Load-time traps
 
-- **`tar_source()` order follows the collation locale.** `foo.R` and `foo_bar.R` swap
+- **`list.files()` order follows the collation locale.** `foo.R` and `foo_bar.R` swap
   places between `C` and `en_*.UTF-8`, so a file that reads another file's top-level object
-  while being sourced works on one machine and fails on the next. `assets/test-pipeline-sources.R`
+  while being sourced works on one machine and fails on the next. `assets/test-project-sources.R`
   sources `R/` forwards and backwards and compares.
 - **Sorting in your own functions follows the locale too.** Fix the functions with
   `sort(method = "radix")` rather than pinning a CI locale.
-- **Pipeline definition must work in a clean clone.** A local config file that checks for
-  data files at definition time, or a `tar_quarto()` report with an invalid YAML escape in a
-  chunk option, breaks `tar_manifest()` -- and so the validator and `tar_make()` -- for the
-  whole project.
+- **Whatever runs when the project loads must work in a clean clone.** A local config file
+  that checks for data files when it is sourced breaks the whole test run in CI.
 
 ## Prove the suite is hermetic
 
@@ -143,9 +142,8 @@ git clone --shared /path/to/project "$SCRATCH/ci-sim"
 cd "$SCRATCH/ci-sim"
 ln -s /path/to/project/renv/library renv/library       # borrow the library, not the data
 R_ENVIRON_USER=/dev/null Rscript-<version> scripts/run-tests.R
-R_ENVIRON_USER=/dev/null Rscript-<version> scripts/validate-projects.R
 git status --porcelain                                   # expect only ?? renv/library
-ls -d inputs outputs data _targets* 2>/dev/null          # expect nothing
+ls -d inputs outputs data 2>/dev/null                    # expect nothing
 ```
 
 - **Use the lockfile's R version.** A bare `Rscript` may be a different R, and the library
@@ -163,6 +161,6 @@ data.
 
 ## Pre-commit and pre-push hooks
 
-A 30-second suite plus a 20-second validator is too slow for a pre-commit hook when several
-sessions commit to one repository. CI is the gate; an opt-in pre-push hook is reasonable if
+A suite that takes half a minute is too slow for a pre-commit hook when several sessions
+commit to one repository. CI is the gate; an opt-in pre-push hook is reasonable if
 the user wants one.

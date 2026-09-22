@@ -18,7 +18,7 @@ The scripts run on Linux and on macOS (bash 3.2, BSD userland). Each has tests i
 
 | Script | What it does |
 | --- | --- |
-| `session-context.sh` | Prints host and its role (control vs compute), the loaded project policy, long-running processes already on the machine **labelled as not yours**, running containers, detached screens, the git branch, uncommitted changes that predate the session, and any drifted submodule pointers. |
+| `session-context.sh` | Prints host and its role (control vs compute), the loaded project policy, the root-cause rule for fixing defects, long-running processes already on the machine **labelled as not yours**, running containers, detached screens, the git branch, uncommitted changes that predate the session, and any drifted submodule pointers. |
 
 This exists because three of the most expensive recorded mistakes -- running heavy
 compute on a control node, signalling another project's process, and staging a
