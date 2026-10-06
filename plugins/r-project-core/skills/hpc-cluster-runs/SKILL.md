@@ -183,14 +183,17 @@ Three constraints worth automating into a `sync-nodes.R`:
   still be on a different commit; compare the recorded SHA against the lockfile, not
   just the version string.
 
-**Never sync or install while a run is live** -- it swaps the library out from
-under the active workers, and a lazy-load failure surfaces hours into a job with an
-error pointing at the package rather than the cause. A hook in this plugin blocks
-this. If the renv cache is shared between machines, note the asymmetry: **installing** on
-one machine only writes a new cache entry, which is safe for the others; the dangerous
-step is the **restore** that re-points a library. To prepare an updated library while a
-run is live, stage it in a second clone with `renv::isolate()` or
-`options(renv.config.cache.symlinks = FALSE)`.
+**Never sync or install while a run of the same project is live** -- it swaps the
+library out from under the active workers, and a lazy-load failure surfaces hours into
+a job with an error pointing at the package rather than the cause. A hook in this
+plugin blocks this. A run in another project loads its own renv library and is not at
+risk, except from `renv::purge()` and `renv::rebuild()`, which delete or replace shared
+cache entries in place; for those, and for installs into a repo without renv, the hook
+checks runs in every project. If the renv cache is shared between machines, note the
+asymmetry: **installing** on one machine only writes a new cache entry, which is safe
+for the others; the dangerous step is the **restore** that re-points a library. To
+prepare an updated library while a run is live, stage it in a second clone with
+`renv::isolate()` or `options(renv.config.cache.symlinks = FALSE)`.
 
 ## Know what is shared between machines
 
