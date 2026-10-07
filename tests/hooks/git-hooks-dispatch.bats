@@ -201,6 +201,61 @@ import() {
   [ "$status" -eq 0 ]
 }
 
+@test "pre-push sees a root commit's diff whatever log.showRoot says" {
+  git -C "$R" config log.showRoot false
+  commit_key first.key
+  run git -C "$R" push -q origin main
+  [ "$status" -ne 0 ]
+}
+
+@test "pre-push sees a merge-only key whatever log.diffMerges says" {
+  commit_file a.txt a
+  git -C "$R" push -q origin main
+  git -C "$R" switch -q -c side
+  commit_file s.txt s
+  git -C "$R" switch -q main
+  commit_file b.txt b
+  git -C "$R" merge -q --no-commit side
+  printf '%s-%s: ssh-ed25519\nEncryption: none\n' PuTTY User-Key-File-3 > "$R/merge.ppk"
+  git -C "$R" add merge.ppk
+  git -C "$R" commit -q --no-verify --no-edit
+  for m in off combined dense-combined; do
+    git -C "$R" config log.diffMerges "$m"
+    run git -C "$R" push -q origin main
+    [ "$status" -ne 0 ] || { echo "pushed under log.diffMerges=$m"; return 1; }
+  done
+}
+
+@test "pre-push checks the commit a push sends, not a replacement" {
+  commit_file a.txt a
+  git -C "$R" push -q origin main
+  commit_key k.key
+  clean="$(git -C "$R" commit-tree "$(git -C "$R" rev-parse 'HEAD~1^{tree}')" -p HEAD~1 -m clean)"
+  git -C "$R" replace HEAD "$clean"
+  run git -C "$R" push -q origin main
+  [ "$status" -ne 0 ]
+}
+
+@test "pre-push refuses when the scan itself fails" {
+  commit_file a.txt a
+  mkdir -p "$BATS_TEST_TMPDIR/bin"
+  printf '#!/bin/sh\ncat >/dev/null\nexit 2\n' > "$BATS_TEST_TMPDIR/bin/awk"
+  chmod +x "$BATS_TEST_TMPDIR/bin/awk"
+  PATH="$BATS_TEST_TMPDIR/bin:$PATH" run git -C "$R" push -q origin main
+  [ "$status" -ne 0 ]
+  [[ "$output" == *"could not check"* ]]
+}
+
+@test "pre-push finds a key on the second of two new branches" {
+  commit_file a.txt a
+  git -C "$R" switch -q -c side
+  commit_key side.key
+  git -C "$R" switch -q main
+  run git -C "$R" push -q origin main side
+  [ "$status" -ne 0 ]
+  [[ "$output" == *side.key* ]]
+}
+
 @test "pre-push lets 1000 clean commits through quickly" {
   commit_file a.txt a
   import 1000

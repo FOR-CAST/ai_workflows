@@ -111,7 +111,9 @@ machine has no key, or the file is not shared with the service account.
   repository's own `.git/hooks/<name>`. A repository that sets its own
   `core.hooksPath` (husky, the pre-commit framework) bypasses it. Re-run
   `install.sh` after updating the dispatcher: it also removes links an earlier
-  version left on hooks that slowed rebases or changed how git behaves.
+  version left on hooks that slowed rebases or changed how git behaves. Neither hook
+  sees a key in a UTF-16 file, in a commit or tag message, or in a file Git LFS
+  tracks (the scan sees the LFS pointer, and the content goes to LFS storage).
 - **In a Claude session**, r-project-core's `guard-credentials.sh` refuses a
   `git add` or `git commit` whose files hold a key, before anything is staged, in the
   project's repository and its submodules.

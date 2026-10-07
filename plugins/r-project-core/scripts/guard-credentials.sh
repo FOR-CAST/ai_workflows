@@ -23,8 +23,8 @@
 #    `git commit <paths>` that bypasses the index is not covered; a pre-commit hook
 #    is (the project-config-layout skill ships one). Only the project's own repository
 #    and its submodules are scanned: an index read runs a repository's core.fsmonitor
-#    command, and this runs before the user sees the command, so every git call here
-#    also turns fsmonitor off.
+#    command, and `ls-files -m` its clean filters, and this runs before the user sees
+#    the command. Every git call here also turns fsmonitor off.
 #
 # A tripwire against accidental exposure, not a boundary: a command that reaches the
 # file without naming it (a variable, a script file, a copy made earlier) passes. For

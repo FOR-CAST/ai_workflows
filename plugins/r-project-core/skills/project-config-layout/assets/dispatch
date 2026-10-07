@@ -42,34 +42,40 @@ if [ "$hook" = "pre-push" ]; then
   )"
   refs="${refs%x}"
   status=0
+  scanned=()
   while read -r local_ref local_sha _ remote_sha; do
     ## a deletion (all-zero local sha) publishes nothing
     case "${local_sha:-0}" in *[!0]*) ;; *) continue ;; esac
     ## what this push publishes: commits the remote's tracking refs do not reach, nor the commit
     ## the remote ref holds now (a force-push or a push to a URL has no tracking ref)
-    not=(--not)
+    not=(--not ${scanned[@]+"${scanned[@]}"})
     [ -n "${1:-}" ] && not+=("--remotes=$1")
     case "${remote_sha:-0}" in
       *[!0]*) git cat-file -e "$remote_sha^{commit}" 2>/dev/null && not+=("$remote_sha") ;;
     esac
     ## every line those commits add, merges included (-m) and binary files as text, in one pass.
-    ## No external diff or textconv, so no configured command runs. awk reads to the end, so git
-    ## never meets a closed pipe, and git's own status is kept: a failed scan refuses the push.
+    ## No external diff or textconv, so no configured command runs; the root commit's diff, each
+    ## merge's diff against every parent, and the commits themselves rather than replacements are
+    ## pinned against the repository's config. awk reads to the end, so git never meets a closed
+    ## pipe, and both exit statuses are kept: a failed scan refuses the push. Commits an earlier
+    ## ref of the same push already scanned are not scanned again.
     out="$(
-      git -c core.quotePath=false log -p -m --text -U0 --no-renames --no-ext-diff --no-textconv \
+      git -c core.quotePath=false -c log.showRoot=true -c log.diffMerges=separate --no-replace-objects \
+        log -p -m --text -U0 --no-renames --no-ext-diff --no-textconv \
         --no-color --no-show-signature --src-prefix=a/ --dst-prefix=b/ --format='commit %H' \
         "$local_sha" "${not[@]}" 2>/dev/null |
-        awk -v key="$key_re" -v putty="$putty_re" '
+        LC_ALL=C awk -v key="$key_re" -v putty="$putty_re" '
           /^commit / { c = substr($2, 1, 12); next }
           /^\+\+\+ / { f = substr($0, 7); next }
           /^\+/ { l = substr($0, 2); if (l ~ key || l ~ putty) print c " " f }'
-      echo "status=${PIPESTATUS[0]}"
+      echo "status=${PIPESTATUS[0]}:${PIPESTATUS[1]}"
     )"
-    if [ "${out##*status=}" != 0 ]; then
+    if [ "${out##*status=}" != 0:0 ]; then
       echo "pre-push: could not check $local_ref for keys, so it is not pushed." >&2
       status=1
       continue
     fi
+    scanned+=("$local_sha")
     while read -r c f; do
       [ -z "$c" ] && continue
       echo "pre-push: refusing to push $local_ref: commit $c adds a private key or a service-account key in '$f'." >&2
