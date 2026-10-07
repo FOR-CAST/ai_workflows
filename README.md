@@ -14,7 +14,7 @@ Eight plugins, organized by the kind of work they support:
 
 | Plugin | For | Contents |
 | --- | --- | --- |
-| **r-project-core** | every R research project | root-cause fixes, R style, ASCII-only, citation integrity, config layout, tests and CI for non-package projects, long runs on shared machines, commit discipline, design logs, project policy -- plus 11 guardrail hooks |
+| **r-project-core** | every R research project | root-cause fixes, R style, ASCII-only, citation integrity, config layout, tests and CI for non-package projects, long runs on shared machines, commit discipline, design logs, project policy -- plus 12 guardrail hooks |
 | **r-package-dev** | R package development | the development -> CI -> main -> project-install workflow, plus only the deltas over the `r-lib` skills: per-package overrides, dependency declaration, roxygen/NAMESPACE drift hook |
 | **r-targets** | `{targets}` pipelines | static validator and targets additions to tests and CI, silent staleness (skill and review agent), project structure, debugging, spatial objects in the store, cluster runs |
 | **r-geospatial** | GIS / spatial analysis | terra and sf across process boundaries, geometry hygiene, large-raster strategies |

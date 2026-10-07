@@ -82,6 +82,7 @@ labels <- list(
   "r-project-core/hook/advise-bash-hygiene.sh" = "a leading cd, a timeout",
   "r-project-core/hook/check-citations.sh" = "resolves every DOI written",
   "r-project-core/hook/guard-ascii.sh" = "non-ASCII in R, qmd, bib",
+  "r-project-core/hook/guard-credentials.sh" = "reading or committing keys",
   "r-project-core/hook/guard-destructive.sh" = "throws away real work",
   "r-project-core/hook/guard-generated-files.sh" = "editing generated files",
   "r-project-core/hook/guard-host-names.sh" = "a machine name published",

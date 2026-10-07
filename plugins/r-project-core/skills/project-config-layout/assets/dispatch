@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+## Git hook dispatcher, installed for all of a user's repositories by scripts/git-hooks/install.sh
+## (one link per hook name in ~/.githooks, with core.hooksPath pointing there). A repository that
+## sets its own core.hooksPath bypasses it.
+##
+## pre-commit and pre-merge-commit refuse a staged private key or Google service-account key,
+## however it was staged: `git add -f`, a renamed or moved copy, or a changed .gitignore. Bypass a
+## false positive with `git commit --no-verify`.
+##
+## Every hook then runs the repository's own hook of the same name, if it has one, because a global
+## core.hooksPath would otherwise skip it (git-lfs, for example, installs per-repository hooks).
+## No pipefail: `grep -q` stops at the first match and the writer then dies of SIGPIPE, which
+## pipefail would turn into "no match" for any file larger than the pipe buffer.
+set -u
+
+hook=$(basename "$0")
+
+if [ "$hook" = "pre-commit" ] || [ "$hook" = "pre-merge-commit" ]; then
+  status=0
+  while IFS= read -r -d '' f; do
+    ## ":0:" names the staged copy explicitly; a bare ":$f" misreads paths such as "1:notes"
+    if git cat-file -p ":0:$f" 2>/dev/null |
+      grep -Eq \
+        -e '-----BEGIN ([A-Z0-9]+ )*PRIVATE KEY( BLOCK)?-----' \
+        -e '---- BEGIN SSH2 ENCRYPTED PRIVATE [K]EY ----' \
+        -e '"type"[[:space:]]*:[[:space:]]*"service_account"'; then
+      echo "$hook: refusing to commit '$f': it holds a private key or a service-account key." >&2
+      status=1
+    fi
+  done < <(git diff --cached --name-only --diff-filter=ACMRT -z)
+  [ "$status" -eq 0 ] || exit "$status"
+fi
+
+## some hooks (e.g. reference-transaction during `git init`) run before the repository exists
+common_dir="$(git rev-parse --git-common-dir 2>/dev/null)" || exit 0
+repo_hook="$common_dir/hooks/$hook"
+if [ -x "$repo_hook" ] && [ "$(readlink -f "$repo_hook")" != "$(readlink -f "$0")" ]; then
+  exec "$repo_hook" "$@"
+fi
+exit 0
