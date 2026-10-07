@@ -100,20 +100,23 @@ machine has no key, or the file is not shared with the service account.
 - **`.gitignore`**: list the key's usual names (`<gcp-project-id>-*.json`,
   `drive-sa*.json`) and `*.Renviron` in the secrets group, **after** its `!`
   entries, so no allowlist entry can re-include a stray copy.
-- **A pre-commit hook** that refuses a staged private key or service-account key,
-  whatever its name or `.gitignore` says: [`assets/dispatch`](../assets/dispatch),
+- **Git hooks** that refuse a staged private key or service-account key, whatever its
+  name or `.gitignore` says, and refuse to push a commit that adds one, however it
+  arrived (a fast-forward merge, a cherry-pick, a rebase, a `--no-verify` commit):
+  [`assets/dispatch`](../assets/dispatch),
   installed by [`assets/install.sh`](../assets/install.sh). Copy both into the
   project's `scripts/git-hooks/`, and have each person run
   `bash scripts/git-hooks/install.sh` once per machine. It installs to `~/.githooks`
   and sets `core.hooksPath` for all of that user's repositories, then runs each
   repository's own `.git/hooks/<name>`. A repository that sets its own
-  `core.hooksPath` (husky, the pre-commit framework) bypasses it. Fast-forward
-  merges, cherry-picks and rebases run no hook that sees file contents, so they are
-  not checked. Re-run `install.sh` after updating the dispatcher: it also removes
-  links an earlier version left on hooks that slowed rebases or changed how git
-  behaves.
+  `core.hooksPath` (husky, the pre-commit framework) bypasses it. Re-run
+  `install.sh` after updating the dispatcher: it also removes links an earlier
+  version left on hooks that slowed rebases or changed how git behaves. Neither hook
+  sees a key in a UTF-16 file, in a commit or tag message, or in a file Git LFS
+  tracks (the scan sees the LFS pointer, and the content goes to LFS storage).
 - **In a Claude session**, r-project-core's `guard-credentials.sh` refuses a
-  `git add` or `git commit` whose files hold a key, before anything is staged.
+  `git add` or `git commit` whose files hold a key, before anything is staged, in the
+  project's repository and its submodules.
 - **On GitHub**, secret scanning and push protection are free on public
   repositories only.
 
@@ -128,10 +131,12 @@ In the project's tracked `.claude/settings.json`:
 "permissions": { "deny": ["Read(~/.config/<project>/**)"] }
 ```
 
-Claude Code applies that rule to its Read, Grep and Glob tools, to `cat`, `head`,
-`tail`, `sed` and `tee`, and to redirections. `guard-credentials.sh` applies the
-same rule to every other Bash command that names the path, such as `jq`, `base64`,
-or an `Rscript` or Python process that would print the key. Listing the folder,
+Claude Code applies that rule to its Read, Grep and Glob tools, to the shell readers
+it recognises (`cat`, `jq`, `base64`, `awk`, `grep` and others) and to redirections.
+It does not stop a program that opens the file itself, such as an `Rscript` or
+Python process, a reader it does not recognise, such as `xxd`, or a copy to an
+unprotected path. `guard-credentials.sh` applies the rule to every Bash command that
+names the path. Listing the folder,
 `stat`, `test -f`, `chmod`, and copying into the folder or to another machine still
 pass. A pipeline that reads the key through `GOOGLEDRIVE_AUTH` never prints it, so
 it runs normally. To learn something inside a key, such as its account, ask the user.

@@ -2,12 +2,13 @@
 # PreToolUse(Bash): keep credential files out of the transcript and out of git.
 #
 # 1. Reading. A Read() deny rule in Claude Code settings stops the Read tool, the
-#    shell commands Claude Code recognises as file readers (cat, head, tail, sed,
-#    tee) and redirections. It does not stop jq, base64, an R or Python process or a
-#    recursive grep, and any of those prints a key into the transcript. This guard
-#    applies the same rules to every Bash command that names a protected path.
-#    Commands that only list, check or set permissions pass, as does a copy into the
-#    protected folder or to another machine.
+#    shell commands Claude Code recognises as file readers (cat, jq, base64, awk,
+#    grep and others) and redirections. It does not stop a program that opens the file
+#    itself, such as an R or Python process, a reader it does not recognise, such as
+#    xxd, or a copy to an unprotected path; any of those can put a key in the
+#    transcript. This guard applies the same rules to every Bash command that names a
+#    protected path. Commands that only list, check or set permissions pass, as does a
+#    copy into the protected folder or to another machine.
 #
 #    The rules are read from the project's .claude/settings.json and
 #    settings.local.json and the user's ~/.claude/settings.json, so each project keeps
@@ -20,7 +21,10 @@
 #    service-account key is denied. Always on: no project wants either in git, and a
 #    file name or .gitignore rule does not stop a renamed copy or `git add -f`. A
 #    `git commit <paths>` that bypasses the index is not covered; a pre-commit hook
-#    is (the project-config-layout skill ships one).
+#    is (the project-config-layout skill ships one). Only the project's own repository
+#    and its submodules are scanned: an index read runs a repository's core.fsmonitor
+#    command, and `ls-files -m` its clean filters, and this runs before the user sees
+#    the command. Every git call here also turns fsmonitor off.
 #
 # A tripwire against accidental exposure, not a boundary: a command that reaches the
 # file without naming it (a variable, a script file, a copy made earlier) passes. For
@@ -47,6 +51,16 @@ MAX=1048576 # keys are small; read at most this much of each file
 # Where SIGPIPE is ignored (CI runners), head reports a write error instead: discard it.
 has_key() { grep -Eq -e "$KEY_RE" < <(head -c "$MAX" 2>/dev/null); }
 
+# the project's git directory, and the git directory of a repository a call names;
+# rev-parse reads no index, so it runs no fsmonitor
+git_dir() {
+  local d
+  d="$(git -C "$1" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)" || return 1
+  readlink -f "$d" 2>/dev/null || printf '%s' "$d"
+}
+proj_git="$(git_dir "$(repo_root)")" || proj_git=""
+G=(git -c core.fsmonitor=false)
+
 keys=""
 while IFS= read -r call; do
   [ -z "$call" ] && continue
@@ -60,7 +74,9 @@ while IFS= read -r call; do
       c="$(printf '%s' "$c" | sed -E 's/^-C +[^ ]+ +//')"
       ;;
   esac
-  git -C "$dir" rev-parse --git-dir >/dev/null 2>&1 || continue
+  g="$(git_dir "$dir")" || continue
+  [ -n "$proj_git" ] || continue
+  [ "$g" = "$proj_git" ] || path_in "$g" "$proj_git/modules" || continue
 
   case "$c" in
     add*)
@@ -86,21 +102,21 @@ while IFS= read -r call; do
         [ -f "$dir/$f" ] && has_key <"$dir/$f" && keys="${keys}  $f
 "
       done < <(
-        git -C "$dir" ls-files -z -m -o --exclude-standard -- "${args[@]}" 2>/dev/null
-        [ "$force" -eq 1 ] && git -C "$dir" ls-files -z -o -i --exclude-standard -- "${args[@]}" 2>/dev/null
+        "${G[@]}" -C "$dir" ls-files -z -m -o --exclude-standard -- "${args[@]}" 2>/dev/null
+        [ "$force" -eq 1 ] && "${G[@]}" -C "$dir" ls-files -z -o -i --exclude-standard -- "${args[@]}" 2>/dev/null
       )
       ;;
     commit*)
       while IFS= read -r -d '' f; do
         ## ":0:" names the staged copy; a bare ":$f" misreads a path such as "1:notes"
-        has_key < <(git -C "$dir" cat-file -p ":0:$f" 2>/dev/null) && keys="${keys}  $f
+        has_key < <("${G[@]}" -C "$dir" cat-file -p ":0:$f" 2>/dev/null) && keys="${keys}  $f
 "
-      done < <(git -C "$dir" diff --cached --name-only --diff-filter=ACMRT -z 2>/dev/null)
+      done < <("${G[@]}" -C "$dir" diff --cached --name-only --diff-filter=ACMRT -z 2>/dev/null)
       if printf '%s ' "$c" | grep -Eq " (-[a-zA-Z]*a[a-zA-Z]*|--all) "; then
         while IFS= read -r -d '' f; do
           [ -f "$dir/$f" ] && has_key <"$dir/$f" && keys="${keys}  $f
 "
-        done < <(git -C "$dir" ls-files -z -m 2>/dev/null)
+        done < <("${G[@]}" -C "$dir" ls-files -z -m 2>/dev/null)
       fi
       ;;
   esac
@@ -277,10 +293,11 @@ check "$cmd" && exit 0
 deny "BLOCKED: this command names ${hit}, which a Read() deny rule in your Claude Code
 settings protects: ${hit_rule}.
 
-Claude Code applies that rule to the Read tool and to cat, head, tail and sed, but
-not to jq, base64, an R or Python process or a recursive grep. Any of those would
-print the file into the transcript, which is sent to the model provider and kept in
-the session log. A copy outside the protected folder is no longer covered by the rule.
+Claude Code applies that rule to the Read tool and to the shell readers it
+recognises, but not to a program that opens the file itself (an R or Python
+process), a reader it does not recognise (xxd), or a copy. Any of those can put the
+file in the transcript, which is sent to the model provider and kept in the session
+log. A copy outside the protected folder is no longer covered by the rule.
 
 Instead:
   - check that the file exists, or its size and permissions: ls -l, stat, test -f;

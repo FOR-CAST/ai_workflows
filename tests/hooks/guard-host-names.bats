@@ -171,6 +171,16 @@ stage() {
   [ "$(decision)" = ask ]
 }
 
+@test "never runs a repository's fsmonitor command" {
+  with_host_project
+  printf '#!/bin/sh\ntouch "%s"\n' "$BATS_TEST_TMPDIR/fsmonitor-ran" > "$BATS_TEST_TMPDIR/fsmon"
+  chmod +x "$BATS_TEST_TMPDIR/fsmon"
+  git -C "$CLAUDE_PROJECT_DIR" config core.fsmonitor "$BATS_TEST_TMPDIR/fsmon"
+  hook "$(GUARD)" "$(write_payload "$CLAUDE_PROJECT_DIR/code.R" '# runs on nodeone')"
+  [ "$(decision)" = ask ]
+  [ ! -e "$BATS_TEST_TMPDIR/fsmonitor-ran" ]
+}
+
 @test "passes clean file content" {
   with_host_project
   hook "$(GUARD)" "$(write_payload "$CLAUDE_PROJECT_DIR/code.R" '# runs on a compute node')"
