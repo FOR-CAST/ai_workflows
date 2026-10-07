@@ -44,7 +44,8 @@ MAX=1048576 # keys are small; read at most this much of each file
 
 # has_key: stdin holds a key. Not a pipeline: grep -q exits at the first match, the
 # writer dies of SIGPIPE, and pipefail would report a key early in a large file as none.
-has_key() { grep -Eq -e "$KEY_RE" < <(head -c "$MAX"); }
+# Where SIGPIPE is ignored (CI runners), head reports a write error instead: discard it.
+has_key() { grep -Eq -e "$KEY_RE" < <(head -c "$MAX" 2>/dev/null); }
 
 keys=""
 while IFS= read -r call; do

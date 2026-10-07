@@ -239,6 +239,8 @@ EOF"
 }
 
 @test "finds a key at the start of a file larger than a pipe buffer" {
+  ## as on CI runners, where an early-exiting reader leaves the writer an error to report
+  trap '' PIPE
   with_repo
   pem 'PRIVATE KEY' "$CLAUDE_PROJECT_DIR/big.txt"
   head -c 200000 /dev/zero | tr '\0' 'x' >> "$CLAUDE_PROJECT_DIR/big.txt"
