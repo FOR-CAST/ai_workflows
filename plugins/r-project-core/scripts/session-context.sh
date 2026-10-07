@@ -59,11 +59,26 @@ if [ -n "$procs" ]; then
   while IFS= read -r line; do
     pid="${line%% *}"
     et="$(ps -o etime= -p "$pid" 2>/dev/null | tr -d ' ')"
-    printf '%s  [running %s]  %s\n' "$pid" "${et:-?}" "$(printf '%s' "${line#* }" | cut -c1-110)"
+    proc_in_repo "$pid" "$root"
+    case $? in
+      0) where="this project" ;;
+      1) d="$(readlink -f "/proc/$pid/cwd" 2>/dev/null)"
+         if [ -n "$d" ]; then where="other: $(basename "$(git_root "$d")")"; else where="project ?"; fi ;;
+      *) where="project ?" ;;
+    esac
+    printf '%s  [running %s; %s]  %s\n' "$pid" "${et:-?}" "$where" "$(printf '%s' "${line#* }" | cut -c1-100)"
   done <<< "$procs"
   echo '```'
-  echo "Do NOT signal, kill, or docker-stop any of these. Do not install packages or"
-  echo "sync nodes while they run -- that swaps the library out from under them."
+  echo "Do NOT signal, kill, or docker-stop any of these."
+  if renv_project "$root"; then
+    echo "Do not install packages or sync nodes while a run of THIS project is live -- that"
+    echo "swaps its library out from under it. Runs in other projects load their own renv"
+    echo "libraries and do not block that, except renv::purge and renv::rebuild, which"
+    echo "rewrite the shared renv cache."
+  else
+    echo "Do not install packages or sync nodes while they run: this repo has no renv"
+    echo "library, so installs go to a library they may share."
+  fi
 fi
 
 # --- containers / screens ---------------------------------------------------

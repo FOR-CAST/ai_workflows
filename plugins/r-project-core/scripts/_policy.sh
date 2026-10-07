@@ -18,10 +18,38 @@
 # from -- and a policy lookup, an air opt-out, or a control-node check would then
 # silently disagree with itself. Always resolve through git, then readlink -f.
 repo_root() {
-  local d top
-  d="${CLAUDE_PROJECT_DIR:-$PWD}"
-  top="$(git -C "$d" rev-parse --show-toplevel 2>/dev/null)" || top="$d"
+  git_root "${CLAUDE_PROJECT_DIR:-$PWD}"
+}
+
+# git_root <dir>: canonical root of the repo holding <dir> (or <dir> itself).
+git_root() {
+  local top
+  top="$(git -C "$1" rev-parse --show-toplevel 2>/dev/null)" || top="$1"
   readlink -f "$top" 2>/dev/null || printf '%s' "$top"
+}
+
+# renv_project <root>: the repo keeps its own renv library.
+renv_project() {
+  [ -f "$1/renv.lock" ] && [ -f "$1/renv/activate.R" ]
+}
+
+# proc_in_repo <pid> <root>: 0 when the process belongs to the repo at <root> -- its
+# working directory resolves inside it, or it inherited RENV_PROJECT pointing inside
+# it (renv exports that on activation, so callr children and crew workers carry it
+# even after a setwd() elsewhere). 1 when it does not, or /proc is unreadable (another
+# user's process). 2 without /proc (macOS): unknown.
+proc_in_repo() {
+  local d
+  [ -d /proc ] || return 2
+  d="$(readlink -f "/proc/$1/cwd" 2>/dev/null)" && path_in "$d" "$2" && return 0
+  d="$(tr '\0' '\n' 2>/dev/null < "/proc/$1/environ" | sed -n 's/^RENV_PROJECT=//p' | head -1)"
+  [ -n "$d" ] && d="$(readlink -f "$d" 2>/dev/null)" && path_in "$d" "$2"
+}
+
+# path_in <path> <root>: <path> is <root> or below it (not a sibling sharing its prefix).
+path_in() {
+  case "$1/" in "$2"/*) return 0 ;; esac
+  return 1
 }
 
 policy_file() {

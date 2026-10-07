@@ -34,7 +34,7 @@ the moment it mattered.
 | `guard-staging.sh` | `git add -A`, `git add .`, `git add -u`, `git commit -a` | multiple sessions share worktrees; sweeping commits have captured unpushed submodule pointers and broken every node in a cluster |
 | `guard-policy.sh` | *policy-driven*: package installs, `air format`, heavy compute on a control node; **asks you to confirm** publishing; advises on a bare `Rscript` | see below |
 | `guard-host-names.sh` | with `hostPatterns`, **asks you to confirm** a commit message, PR or issue body, release note or staged diff that names one of your machines | a name in a commit is public and permanent, and says nothing about reproducibility. An `ssh` destination is not a published name, so it passes |
-| `guard-long-run-interlock.sh` | package installs (renv, pak, remotes, devtools, Require, `setupProject()`), `renv::checkout()` and node syncs **while a long run is live** | syncing swaps the R library out from under active workers |
+| `guard-long-run-interlock.sh` | package installs (renv, pak, remotes, devtools, Require, `setupProject()`), `renv::checkout()` and node syncs **while a long run of the same project is live**; `renv::purge()`/`rebuild()`, installs into a repo without renv, and commands whose target project is unclear, while a long run of **any** project is live | syncing swaps the R library out from under active workers. A run in another renv project loads its own library, but shares the renv cache that purge and rebuild rewrite |
 | `advise-bash-hygiene.sh` | *(never denies)* notes a leading `cd` (the shell's cwd does not persist between calls) and a long command still on the default 2-minute timeout | ~3,000 cwd resets and 64 timeouts in the record |
 
 ### PreToolUse / MCP tools

@@ -9,6 +9,7 @@ setup() {
 
 teardown() {
   [ -n "${FAKE_RUN_PID:-}" ] && kill "$FAKE_RUN_PID" 2>/dev/null
+  [ -n "${OTHER_RUN_PID:-}" ] && kill "$OTHER_RUN_PID" 2>/dev/null
   return 0
 }
 
@@ -32,6 +33,24 @@ teardown() {
   run "$G" </dev/null
   [ "$status" -eq 0 ]
   echo "$output" | grep -q "^$FAKE_RUN_PID .*sleep 3002"
+}
+
+@test "labels each run with its project, and in an renv project only its own runs block installs" {
+  [ -d /proc ] || skip "needs /proc to tell projects apart"
+  with_policy '{"longRunPatterns": ["sleep 3002"]}'
+  mkdir -p "$CLAUDE_PROJECT_DIR/renv" "$BATS_TEST_TMPDIR/other"
+  echo '{}' > "$CLAUDE_PROJECT_DIR/renv.lock"
+  : > "$CLAUDE_PROJECT_DIR/renv/activate.R"
+  git -C "$BATS_TEST_TMPDIR/other" init -q
+  (cd "$CLAUDE_PROJECT_DIR" && exec sleep 3002) &
+  FAKE_RUN_PID=$!
+  (cd "$BATS_TEST_TMPDIR/other" && exec sleep 3002) &
+  OTHER_RUN_PID=$!
+  run "$G" </dev/null
+  [ "$status" -eq 0 ]
+  echo "$output" | grep -q "^$FAKE_RUN_PID .*this project.*sleep 3002"
+  echo "$output" | grep -q "^$OTHER_RUN_PID .*other: other.*sleep 3002"
+  echo "$output" | grep -q 'while a run of THIS project is live'
 }
 
 @test "states the root-cause rule and names the skill that carries it" {
