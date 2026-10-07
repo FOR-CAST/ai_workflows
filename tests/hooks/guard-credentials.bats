@@ -231,6 +231,13 @@ EOF"
   [ "$(decision)" = deny ]
 }
 
+@test "recognises PuTTY private keys" {
+  with_repo
+  printf '%s-%s: ssh-ed25519\nEncryption: none\n' PuTTY User-Key-File-3 > "$CLAUDE_PROJECT_DIR/id.ppk"
+  bash_hook "$(GUARD)" 'git add id.ppk'
+  [ "$(decision)" = deny ]
+}
+
 @test "finds a key at the start of a file larger than a pipe buffer" {
   with_repo
   pem 'PRIVATE KEY' "$CLAUDE_PROJECT_DIR/big.txt"

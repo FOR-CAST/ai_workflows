@@ -107,7 +107,11 @@ machine has no key, or the file is not shared with the service account.
   `bash scripts/git-hooks/install.sh` once per machine. It installs to `~/.githooks`
   and sets `core.hooksPath` for all of that user's repositories, then runs each
   repository's own `.git/hooks/<name>`. A repository that sets its own
-  `core.hooksPath` (husky, the pre-commit framework) bypasses it.
+  `core.hooksPath` (husky, the pre-commit framework) bypasses it. Fast-forward
+  merges, cherry-picks and rebases run no hook that sees file contents, so they are
+  not checked. Re-run `install.sh` after updating the dispatcher: it also removes
+  links an earlier version left on hooks that slowed rebases or changed how git
+  behaves.
 - **In a Claude session**, r-project-core's `guard-credentials.sh` refuses a
   `git add` or `git commit` whose files hold a key, before anything is staged.
 - **On GitHub**, secret scanning and push protection are free on public

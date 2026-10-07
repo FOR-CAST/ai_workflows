@@ -37,9 +37,9 @@ HOME="${HOME:-}"
 n=" $(printf '%s' "$cmd" | tr '\n' ';' | tr -s '[:space:]' ' ') "
 
 ## ------------------------------------------------------------- committing --
-## PEM and PGP private keys, ssh.com keys ([K] keeps this line from matching itself)
-## and Google service-account keys
-KEY_RE='-----BEGIN ([A-Z0-9]+ )*PRIVATE KEY( BLOCK)?-----|---- BEGIN SSH2 ENCRYPTED PRIVATE [K]EY ----|"type"[[:space:]]*:[[:space:]]*"service_account"'
+## PEM and PGP private keys, ssh.com keys ([K] keeps this line from matching itself),
+## Google service-account keys, and PuTTY keys (^ cannot match this line)
+KEY_RE='-----BEGIN ([A-Z0-9]+ )*PRIVATE KEY( BLOCK)?-----|---- BEGIN SSH2 ENCRYPTED PRIVATE [K]EY ----|"type"[[:space:]]*:[[:space:]]*"service_account"|^PuTTY-User-Key-File-[0-9]+:'
 MAX=1048576 # keys are small; read at most this much of each file
 
 # has_key: stdin holds a key. Not a pipeline: grep -q exits at the first match, the

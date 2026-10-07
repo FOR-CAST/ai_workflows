@@ -41,6 +41,13 @@ pem() {
   [ "$status" -ne 0 ]
 }
 
+@test "refuses a PuTTY key" {
+  printf '%s-%s: ssh-ed25519\nEncryption: none\n' PuTTY User-Key-File-3 > "$R/id.ppk"
+  git -C "$R" add id.ppk
+  run git -C "$R" commit -qm ppk
+  [ "$status" -ne 0 ]
+}
+
 @test "finds a key at the start of a file larger than a pipe buffer" {
   pem 'PRIVATE KEY' "$R/big.txt"
   head -c 200000 /dev/zero | tr '\0' 'x' >> "$R/big.txt"
@@ -64,6 +71,7 @@ pem() {
     -e '-----BEGIN ([A-Z0-9]+ )*PRIVATE KEY( BLOCK)?-----' \
     -e '---- BEGIN SSH2 ENCRYPTED PRIVATE [K]EY ----' \
     -e '"type"[[:space:]]*:[[:space:]]*"service_account"' \
+    -e '^PuTTY-User-Key-File-[0-9]+:' \
     "$ASSETS/dispatch" "$ASSETS/install.sh" "$CORE/guard-credentials.sh"
   [ "$status" -eq 1 ]
 }
