@@ -9,7 +9,7 @@ src="$(cd "$(dirname "$0")" && pwd)/dispatch"
 dest="$HOME/.githooks"
 
 ## read every config source (system, both global files, includes); `cd /` keeps a repo value out
-current="$(cd / && git config --type=path --get core.hooksPath || true)"
+current="$(cd / && { git config --type=path --get core.hooksPath || true; })"
 if [ -n "$current" ] && [ "$(readlink -f "$current")" != "$(readlink -f "$dest")" ]; then
   echo "core.hooksPath is already set to '$current'; leaving it alone." >&2
   exit 1

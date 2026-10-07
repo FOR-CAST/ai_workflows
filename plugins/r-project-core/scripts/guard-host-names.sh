@@ -125,7 +125,8 @@ found="$(names_in "$text")"
 d="$(dirname "$f")"
 while [ ! -d "$d" ] && [ "$d" != "/" ] && [ -n "$d" ]; do d="$(dirname "$d")"; done
 git -C "$d" rev-parse --git-dir >/dev/null 2>&1 || exit 0
-git -C "$d" check-ignore -q -- "$f" 2>/dev/null && exit 0
+## fsmonitor off: check-ignore reads the index, and this runs before the user's prompt
+git -c core.fsmonitor=false -C "$d" check-ignore -q -- "$f" 2>/dev/null && exit 0
 
 ask_user "ASK: this writes a machine name -- ${found} -- into a file git tracks
 

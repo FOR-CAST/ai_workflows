@@ -269,12 +269,34 @@ EOF"
   [ "$(decision)" = deny ]
 }
 
-@test "follows git -C to a repository under ~" {
+@test "follows git -C into a folder of the project" {
+  with_repo
+  mkdir -p "$CLAUDE_PROJECT_DIR/sub"
+  printf '*.json\n' > "$CLAUDE_PROJECT_DIR/.gitignore"
+  sa_json "$CLAUDE_PROJECT_DIR/sub/drive-sa.json"
+  bash_hook "$(GUARD)" "git -C $CLAUDE_PROJECT_DIR/sub add -f drive-sa.json"
+  [ "$(decision)" = deny ]
+}
+
+@test "leaves a repository outside the project to the pre-commit hook" {
+  with_repo
   git init -q "$HOME/repo"
   printf '*.json\n' > "$HOME/repo/.gitignore"
   sa_json "$HOME/repo/drive-sa.json"
   bash_hook "$(GUARD)" 'git -C ~/repo add -f drive-sa.json'
-  [ "$(decision)" = deny ]
+  [ "$(decision)" = none ]
+}
+
+@test "never runs a repository's fsmonitor command" {
+  with_repo
+  printf '#!/bin/sh\ntouch "%s"\n' "$BATS_TEST_TMPDIR/fsmonitor-ran" > "$BATS_TEST_TMPDIR/fsmon"
+  chmod +x "$BATS_TEST_TMPDIR/fsmon"
+  git -C "$CLAUDE_PROJECT_DIR" config core.fsmonitor "$BATS_TEST_TMPDIR/fsmon"
+  printf 'y <- 2\n' >> "$CLAUDE_PROJECT_DIR/code.R"
+  git -C "$CLAUDE_PROJECT_DIR" -c core.fsmonitor=false add code.R
+  bash_hook "$(GUARD)" 'git add code.R && git commit -a -m "change code"'
+  [ "$(decision)" = none ]
+  [ ! -e "$BATS_TEST_TMPDIR/fsmonitor-ran" ]
 }
 
 @test "a plain git add of a folder skips an ignored key" {
