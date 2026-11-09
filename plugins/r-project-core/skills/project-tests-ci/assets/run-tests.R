@@ -11,6 +11,27 @@
 ##   Rscript scripts/run-tests.R                  # everything
 ##   Rscript scripts/run-tests.R some-filter      # files matching a filter
 
+## The tests use at most 4 cores (TEST_CORES may set fewer): a test must never take a shared
+## machine. R starts OpenMP and BLAS before this script runs, so their limits must be in the
+## environment R starts with: without them, the script runs itself again in a new R process that
+## has them. data.table reads the same limit when it loads; R processes the tests start inherit it.
+local({
+  asked <- suppressWarnings(as.integer(Sys.getenv("TEST_CORES")))
+  cores <- if (is.na(asked)) 4L else min(4L, max(1L, asked))
+  limit <- suppressWarnings(as.integer(Sys.getenv("OMP_THREAD_LIMIT")))
+  if (is.na(limit) || limit > cores) {
+    status <- system2(
+      file.path(R.home("bin"), "R"),
+      shQuote(commandArgs(trailingOnly = FALSE)[-1L]),
+      env = paste0(
+        c("OMP_THREAD_LIMIT=", "OMP_NUM_THREADS=", "OPENBLAS_NUM_THREADS=", "MKL_NUM_THREADS="),
+        cores
+      )
+    )
+    quit(save = "no", status = status)
+  }
+})
+
 Sys.setenv(TESTTHAT_EDITION = "3", NOT_CRAN = "true")
 filter <- commandArgs(trailingOnly = TRUE)
 

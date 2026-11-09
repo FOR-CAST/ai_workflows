@@ -99,6 +99,7 @@ Estimate source builds first: `Rscript assets/cold-cache-estimate.R renv.lock no
 
 - [ ] `tests/testthat/` with helpers; `scripts/run-tests.R` sources what the project sources
 - [ ] testthat in `renv.lock`; `TESTTHAT_EDITION=3` and `NOT_CRAN=true`
+- [ ] The runner limits the tests to at most 4 cores, in the environment R starts with
 - [ ] No test reads or writes real data; artefact-dependent checks skip
 - [ ] Each test file shown to fail when its rule is broken
 - [ ] Hermetic `--shared` clone run: no failures, no writes

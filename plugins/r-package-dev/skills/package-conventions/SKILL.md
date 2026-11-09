@@ -139,6 +139,44 @@ before concluding there is none.
 Where a package documents a parallelism setting for its suite, honour it -- some
 must run with `TESTTHAT_PARALLEL=false`.
 
+## Tests use at most 2 cores
+
+CRAN asks for at most 2, and a test must never take a shared machine: xgboost,
+data.table, BLAS and other OpenMP code use every core unless told otherwise (one
+tuning test took about 80 of a node's 96). Extended tests may use up to 4.
+
+R links the OpenMP runtime, which reads `OMP_THREAD_LIMIT` when R starts, so a limit
+set inside the test session comes too late for it. Set it in two places:
+
+- the GitHub workflows' job `env:` -- `R CMD check` runs the tests in a new R process,
+  which then starts with the limits:
+
+  ```yaml
+  OMP_THREAD_LIMIT: 2
+  OMP_NUM_THREADS: 2
+  OPENBLAS_NUM_THREADS: 2
+  MKL_NUM_THREADS: 2
+  ```
+
+- `tests/testthat/setup-cores.R`, for the R processes the tests start (callr,
+  workers) and for data.table, which reads its limit at run time:
+
+  ```r
+  withr::local_envvar(
+    OMP_THREAD_LIMIT = "2", OMP_NUM_THREADS = "2",
+    OPENBLAS_NUM_THREADS = "2", MKL_NUM_THREADS = "2",
+    .local_envir = testthat::teardown_env()
+  )
+  ## only where data.table is declared
+  old <- data.table::setDTthreads(2L)
+  withr::defer(data.table::setDTthreads(old), envir = testthat::teardown_env())
+  ```
+
+Add `withr` to `Suggests` if it is missing, and a `test-cores.R` that reads the limit
+back. A module or project with its own runner (`Rscript tests/run-tests.R`) re-runs
+itself with the variables set when they are missing (see
+`r-project-core:project-tests-ci`).
+
 ## `.Rbuildignore` needs `^\.claude$`
 
 `R CMD check ... NOTE: Found the following hidden files and directories: .claude`
