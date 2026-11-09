@@ -9,6 +9,7 @@
 - What is worth testing
 - Prove every test can fail
 - Load-time traps
+- Tests use at most 4 cores
 - Prove the suite is hermetic
 - Pre-commit and pre-push hooks
 
@@ -131,6 +132,21 @@ body.
   `sort(method = "radix")` rather than pinning a CI locale.
 - **Whatever runs when the project loads must work in a clean clone.** A local config file
   that checks for data files when it is sourced breaks the whole test run in CI.
+
+## Tests use at most 4 cores
+
+A test must never take a shared machine. xgboost, data.table, BLAS and other OpenMP code use
+every core unless told otherwise: one tuning test on small made-up data took about 80 of a
+compute node's 96 cores. Project suites and extended tests use at most 4 cores; package tests 2
+(see `r-package-dev:package-conventions`).
+
+R links the OpenMP runtime, which reads `OMP_THREAD_LIMIT` when R starts, so `Sys.setenv()` in a
+test or helper is too late for that R process. The limit has to be in the environment R starts
+with. `assets/run-tests.R` checks for it and, when it is missing, runs itself again in a new R
+process with `OMP_THREAD_LIMIT`, `OMP_NUM_THREADS`, `OPENBLAS_NUM_THREADS` and `MKL_NUM_THREADS`
+set; `TEST_CORES` may set fewer. Keep a test that reads the limit back (for example, run the
+runner on a temporary project whose one test records `OMP_THREAD_LIMIT`), so a later edit cannot
+drop it silently.
 
 ## Prove the suite is hermetic
 
